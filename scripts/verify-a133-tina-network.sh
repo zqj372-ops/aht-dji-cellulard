@@ -183,6 +183,8 @@ fi
 TARGET_NETDEV_PROBE='
 # AHT_TARGET_CDC_NETDEV_PROBE
 target_count=0
+control_count=0
+data_count=0
 binding_count=0
 netdev_count=0
 target_netdev=
@@ -196,6 +198,7 @@ for device in /sys/bus/usb/devices/*; do
     [ -d "$interface" ] || continue
     [ "$(cat "$interface/bInterfaceClass" 2>/dev/null)" = "02" ] || continue
     [ "$(cat "$interface/bInterfaceSubClass" 2>/dev/null)" = "06" ] || continue
+    control_count=$((control_count + 1))
     [ -L "$interface/driver" ] || continue
     driver=$(readlink "$interface/driver" 2>/dev/null || true)
     case "$driver" in cdc_ether|*/cdc_ether) ;; *) continue ;; esac
@@ -207,7 +210,19 @@ for device in /sys/bus/usb/devices/*; do
     done
   done
 done
-if [ "$target_count" -eq 1 ] && [ "$binding_count" -eq 1 ] && [ "$netdev_count" -eq 1 ]; then
+for device in /sys/bus/usb/devices/*; do
+  [ -f "$device/idVendor" ] || continue
+  [ -f "$device/idProduct" ] || continue
+  [ "$(cat "$device/idVendor" 2>/dev/null)" = "2ca3" ] || continue
+  [ "$(cat "$device/idProduct" 2>/dev/null)" = "4006" ] || continue
+  for interface in "$device":*; do
+    [ -d "$interface" ] || continue
+    [ "$(cat "$interface/bInterfaceClass" 2>/dev/null)" = "0a" ] || continue
+    [ "$(cat "$interface/bInterfaceSubClass" 2>/dev/null)" = "00" ] || continue
+    data_count=$((data_count + 1))
+  done
+done
+if [ "$target_count" -eq 1 ] && [ "$control_count" -eq 1 ] && [ "$data_count" -eq 1 ] && [ "$binding_count" -eq 1 ] && [ "$netdev_count" -eq 1 ]; then
   printf "%s\\n" "TARGET_CDC_NETDEV=$target_netdev"
 else
   printf "%s\\n" TARGET_CDC_NETDEV_NOT_READY

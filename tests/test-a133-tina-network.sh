@@ -101,7 +101,13 @@ if [ "${1:-}" = "-s" ] && [ "${3:-}" = "shell" ]; then
     'id -u') printf '%s\n' '0' ;;
     'uname -r') printf '%s\n' '4.9.191' ;;
     *'/etc/openwrt_release'*) printf '%s\n' "DISTRIB_TARGET='a133-aw3/generic v1.0'" ;;
-    *'/sys/bus/usb/devices/'*) printf '%s\n' 'TARGET_CDC_NETDEV=cdc0' ;;
+    *'/sys/bus/usb/devices/'*)
+      if [ "${FAKE_TARGET_MODE:-ready}" = "not-ready" ]; then
+        printf '%s\n' 'TARGET_CDC_NETDEV_NOT_READY'
+      else
+        printf '%s\n' 'TARGET_CDC_NETDEV=cdc0'
+      fi
+      ;;
     *'udhcpc -i cdc0 -n -q'*) exit 0 ;;
     *'ip -o -4 addr show dev cdc0'*) printf '%s\n' '5: cdc0    inet 10.23.0.2/24 brd 10.23.0.255 scope global cdc0' ;;
     *'ip -o route show default'*)
@@ -146,6 +152,26 @@ if grep 'udhcpc' "$FAKE_LOG" >/dev/null; then
 fi
 if printf '%s\n' "$output" | grep '10\.23\.0\.2\|10\.23\.0\.1\|gateway\.example' >/dev/null; then
   printf '%s\n' 'FAIL: device output must not expose address, route, or gateway host' >&2
+  exit 1
+fi
+
+: > "$FAKE_LOG"
+if ! output=$(
+  PATH="$FAKE_BIN:$PATH" \
+  FAKE_ADB_LOG="$FAKE_LOG" \
+  FAKE_TARGET_MODE=not-ready \
+  AHT_CELLULAR_INTERFACE=cdc0 \
+  AHT_GATEWAY_HOST=gateway.example \
+  sh "$VERIFIER" --device 2>&1
+); then
+  printf '%s\n' 'FAIL: missing target binding should be an observed degraded state' >&2
+  printf '%s\n' "$output" >&2
+  exit 1
+fi
+printf '%s\n' "$output" | grep '^state=degraded$' >/dev/null
+printf '%s\n' "$output" | grep '^reason=cdc_ether_binding_missing$' >/dev/null
+if grep -E 'ip -o|ping -I|udhcpc' "$FAKE_LOG" >/dev/null; then
+  printf '%s\n' 'FAIL: missing target binding must stop before network probes' >&2
   exit 1
 fi
 
