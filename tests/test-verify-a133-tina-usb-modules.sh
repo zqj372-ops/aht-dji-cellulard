@@ -8,9 +8,18 @@ TEST_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/aht-verifier-test.XXXXXX")
 PACKAGE_DIR="$TEST_ROOT/package"
 mkdir -p "$PACKAGE_DIR"
 
-if output=$(AHT_PACKAGE_DIR="$PACKAGE_DIR" bash "$VERIFIER" --load 2>&1); then
-  printf '%s\n' 'FAIL: device load was allowed without mutation flag' >&2
+cleanup() {
+  rm -rf "$TEST_ROOT"
+}
+trap cleanup 0 1 2 3 15
+
+test_fail() {
+  printf 'FAIL: %s\n' "$1" >&2
   exit 1
+}
+
+if output=$(AHT_PACKAGE_DIR="$PACKAGE_DIR" sh "$VERIFIER" --load 2>&1); then
+  test_fail 'device load was allowed without mutation flag'
 fi
 printf '%s\n' "$output" | grep 'AHT_ALLOW_DEVICE_MUTATION=1' >/dev/null
 
@@ -31,54 +40,110 @@ cat > "$PACKAGE_DIR/manifest.json" <<'EOF'
 }
 EOF
 
-if output=$(AHT_PACKAGE_DIR="$PACKAGE_DIR" bash "$VERIFIER" --static 2>&1); then
-  printf '%s\n' 'FAIL: wrong module hash was accepted' >&2
-  exit 1
+if output=$(AHT_PACKAGE_DIR="$PACKAGE_DIR" sh "$VERIFIER" --static 2>&1); then
+  test_fail 'wrong module hash was accepted'
 fi
 printf '%s\n' "$output" | grep 'sha256 mismatch' >/dev/null
 
 sed 's/"4.9.191"/"5.4.0"/' "$PACKAGE_DIR/manifest.json" > "$PACKAGE_DIR/manifest.wrong-release.json"
 mv "$PACKAGE_DIR/manifest.wrong-release.json" "$PACKAGE_DIR/manifest.json"
-if output=$(AHT_PACKAGE_DIR="$PACKAGE_DIR" bash "$VERIFIER" --static 2>&1); then
-  printf '%s\n' 'FAIL: wrong kernel release was accepted' >&2
-  exit 1
+if output=$(AHT_PACKAGE_DIR="$PACKAGE_DIR" sh "$VERIFIER" --static 2>&1); then
+  test_fail 'wrong kernel release was accepted'
 fi
 printf '%s\n' "$output" | grep 'kernel release mismatch' >/dev/null
 
 PACKAGE_DIR="$SCRIPT_DIR/../artifacts/a133-tina-reference-01"
 FAKE_BIN="$TEST_ROOT/bin"
-FAKE_ADB_LOG="$TEST_ROOT/adb.log"
 mkdir -p "$FAKE_BIN"
 cat > "$FAKE_BIN/adb" <<'EOF'
 #!/bin/sh
 
-printf '%s\n' "$*" >> "$FAKE_ADB_LOG"
+printf '%s\n' "$*" >> "${FAKE_ADB_LOG:?}"
+
+scenario=${FAKE_ADB_SCENARIO:-success}
+state_file=${FAKE_ADB_STATE:?}
+
+set_state() {
+  printf '%s\n' "$1" > "$state_file"
+}
+
+state_value=$(cat "$state_file" 2>/dev/null || true)
 
 if [ "${1:-}" = "devices" ]; then
   printf '%s\n' 'List of devices attached'
-  printf '%s\t%s\n' 'fixture-device' 'device'
-  exit 0
-fi
-
-if [ "${1:-}" = "-s" ] && [ "${3:-}" = "shell" ]; then
-  command=${4:-}
-  if [ "$#" -ge 5 ]; then
-    command="$command $5"
-  fi
-  case "$command" in
-    'id -u') printf '%s\n' '0' ;;
-    'uname -r') printf '%s\n' '4.9.191' ;;
-    'grep -E "^(usbnet|cdc_ether) " /proc/modules') exit 1 ;;
-    mkdir\ -p\ * ) exit 0 ;;
-    *usbnet.ko* ) exit 0 ;;
-    *cdc_ether.ko* ) exit 1 ;;
-    'rmmod cdc_ether'|'rmmod usbnet') exit 0 ;;
-    *) exit 0 ;;
-  esac
+  printf '%s\t%s\n' 'fixture-adb-serial' 'device'
   exit 0
 fi
 
 if [ "${1:-}" = "-s" ] && [ "${3:-}" = "push" ]; then
+  exit 0
+fi
+
+if [ "${1:-}" = "-s" ] && [ "${3:-}" = "shell" ]; then
+  remote_command=$*
+  case "$remote_command" in
+    *'id -u'*)
+      printf '%s\n' '0'
+      ;;
+    *'uname -r'*)
+      printf '%s\n' '4.9.191'
+      ;;
+    *openwrt_release*)
+      printf '%s\n' "DISTRIB_TARGET='a133-aw3/generic v1.0'"
+      ;;
+    *AHT_USB_IDENTITY_CHECK*)
+      if [ "$scenario" = "reject" ]; then
+        printf '%s\n' 'USB_IDENTITY_NOT_READY'
+      else
+        printf '%s\n' 'USB_IDENTITY_READY'
+      fi
+      ;;
+    *AHT_MODULE_STATE*)
+      case "$state_value" in
+        '') printf '%s\n' 'MODULES_ABSENT' ;;
+        usbnet) printf '%s\n' 'USBNET_ONLY' ;;
+        usbnet_cdc_ether) printf '%s\n' 'MODULES_BOTH' ;;
+        *) printf '%s\n' 'MODULES_UNEXPECTED' ;;
+      esac
+      ;;
+    *AHT_BINDING_READBACK*)
+      if [ "$state_value" = "usbnet_cdc_ether" ] && [ "$scenario" = "success" ]; then
+        printf '%s\n' 'BINDING_READY'
+      else
+        printf '%s\n' 'BINDING_NOT_READY'
+      fi
+      ;;
+    *insmod*usbnet.ko*)
+      set_state usbnet
+      ;;
+    *insmod*cdc_ether.ko*)
+      if [ "$scenario" = "load-failure" ]; then
+        exit 1
+      fi
+      set_state usbnet_cdc_ether
+      ;;
+    *'rmmod cdc_ether'*)
+      if [ "$state_value" = "usbnet_cdc_ether" ]; then
+        set_state usbnet
+      elif [ "$state_value" = "cdc_ether" ]; then
+        set_state ''
+      fi
+      ;;
+    *'rmmod usbnet'*)
+      if [ "$state_value" = "usbnet_cdc_ether" ] || [ "$state_value" = "usbnet" ]; then
+        set_state ''
+      fi
+      ;;
+    *'mkdir -p'*)
+      ;;
+    *'rm -f'*)
+      ;;
+    *rmdir*)
+      ;;
+    *)
+      exit 1
+      ;;
+  esac
   exit 0
 fi
 
@@ -86,79 +151,83 @@ exit 1
 EOF
 chmod +x "$FAKE_BIN/adb"
 
+REJECT_LOG="$TEST_ROOT/reject-adb.log"
+REJECT_STATE="$TEST_ROOT/reject-state"
+: > "$REJECT_STATE"
 if output=$(
   PATH="$FAKE_BIN:$PATH" \
-  FAKE_ADB_LOG="$FAKE_ADB_LOG" \
+  FAKE_ADB_LOG="$REJECT_LOG" \
+  FAKE_ADB_STATE="$REJECT_STATE" \
+  FAKE_ADB_SCENARIO=reject \
   AHT_PACKAGE_DIR="$PACKAGE_DIR" \
   AHT_ALLOW_DEVICE_MUTATION=1 \
-  bash "$VERIFIER" --load 2>&1
+  sh "$VERIFIER" --load 2>&1
 ); then
-  printf '%s\n' 'FAIL: simulated cdc_ether load failure should fail the gate' >&2
-  exit 1
+  test_fail 'wrong target USB identity was accepted'
+fi
+printf '%s\n' "$output" | grep 'target USB identity' >/dev/null
+if grep -E '(^| )push( |$)|shell.*mkdir -p|shell.*insmod' "$REJECT_LOG" >/dev/null 2>&1; then
+  test_fail 'target identity rejection touched the device'
+fi
+if printf '%s\n' "$output" | grep -F 'fixture-adb-serial' >/dev/null 2>&1; then
+  test_fail 'ADB serial was printed on target rejection'
+fi
+
+SUCCESS_LOG="$TEST_ROOT/success-adb.log"
+SUCCESS_STATE="$TEST_ROOT/success-state"
+: > "$SUCCESS_STATE"
+if ! output=$(
+  PATH="$FAKE_BIN:$PATH" \
+  FAKE_ADB_LOG="$SUCCESS_LOG" \
+  FAKE_ADB_STATE="$SUCCESS_STATE" \
+  FAKE_ADB_SCENARIO=success \
+  AHT_PACKAGE_DIR="$PACKAGE_DIR" \
+  AHT_ALLOW_DEVICE_MUTATION=1 \
+  sh "$VERIFIER" --load 2>&1
+); then
+  printf '%s\n' "$output" >&2
+  test_fail 'simulated successful module load failed'
+fi
+printf '%s\n' "$output" | grep 'status=modules_retained' >/dev/null
+printf '%s\n' "$output" | grep 'remote_module_files=removed' >/dev/null
+printf '%s\n' "$output" | grep 'network_configuration=unchanged' >/dev/null
+if printf '%s\n' "$output" | grep -E 'fixture-adb-serial|dmesg|[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){5}|IMEI|IMSI|ICCID' >/dev/null 2>&1; then
+  test_fail 'success output exposed a forbidden identifier or raw dmesg'
+fi
+grep 'rm -f' "$SUCCESS_LOG" >/dev/null
+if grep 'rmmod ' "$SUCCESS_LOG" >/dev/null 2>&1; then
+  test_fail 'successful module load unexpectedly attempted rollback'
+fi
+[ "$(cat "$SUCCESS_STATE")" = 'usbnet_cdc_ether' ] || test_fail 'successful load did not retain both modules'
+
+FAIL_LOG="$TEST_ROOT/failure-adb.log"
+FAIL_STATE="$TEST_ROOT/failure-state"
+: > "$FAIL_STATE"
+if output=$(
+  PATH="$FAKE_BIN:$PATH" \
+  FAKE_ADB_LOG="$FAIL_LOG" \
+  FAKE_ADB_STATE="$FAIL_STATE" \
+  FAKE_ADB_SCENARIO=load-failure \
+  AHT_PACKAGE_DIR="$PACKAGE_DIR" \
+  AHT_ALLOW_DEVICE_MUTATION=1 \
+  sh "$VERIFIER" --load 2>&1
+); then
+  test_fail 'simulated cdc_ether load failure was accepted'
 fi
 printf '%s\n' "$output" | grep 'rollback attempted' >/dev/null
-cdc_rollback_line=$(grep -n 'rmmod cdc_ether' "$FAKE_ADB_LOG" | cut -d: -f1 | head -n 1)
-usbnet_rollback_line=$(grep -n 'rmmod usbnet' "$FAKE_ADB_LOG" | cut -d: -f1 | head -n 1)
-[ -n "$cdc_rollback_line" ] || { printf '%s\n' 'FAIL: cdc_ether rollback was not attempted' >&2; exit 1; }
-[ -n "$usbnet_rollback_line" ] || { printf '%s\n' 'FAIL: usbnet rollback was not attempted' >&2; exit 1; }
-[ "$cdc_rollback_line" -lt "$usbnet_rollback_line" ] || { printf '%s\n' 'FAIL: rollback order was not reverse dependency order' >&2; exit 1; }
-
-SUCCESS_BIN="$TEST_ROOT/success-bin"
-SUCCESS_ADB_LOG="$TEST_ROOT/success-adb.log"
-mkdir -p "$SUCCESS_BIN"
-cat > "$SUCCESS_BIN/adb" <<'EOF'
-#!/bin/sh
-
-printf '%s\n' "$*" >> "$SUCCESS_ADB_LOG"
-
-if [ "${1:-}" = "devices" ]; then
-  printf '%s\n' 'List of devices attached'
-  printf '%s\t%s\n' 'fixture-device' 'device'
-  exit 0
+printf '%s\n' "$output" | grep 'status=rollback_complete' >/dev/null
+printf '%s\n' "$output" | grep 'remote_module_files=removed' >/dev/null
+cdc_rollback_line=$(grep -n 'shell rmmod cdc_ether' "$FAIL_LOG" | cut -d: -f1 | head -n 1)
+usbnet_rollback_line=$(grep -n 'shell rmmod usbnet' "$FAIL_LOG" | cut -d: -f1 | head -n 1)
+[ -n "$cdc_rollback_line" ] || test_fail 'cdc_ether rollback was not attempted'
+[ -n "$usbnet_rollback_line" ] || test_fail 'usbnet rollback was not attempted'
+[ "$cdc_rollback_line" -lt "$usbnet_rollback_line" ] || test_fail 'rollback order was not reverse dependency order'
+[ -z "$(cat "$FAIL_STATE")" ] || test_fail 'rollback unload readback left a module loaded'
+if grep dmesg "$FAIL_LOG" >/dev/null 2>&1; then
+  test_fail 'failure path requested raw dmesg'
+fi
+if printf '%s\n' "$output" | grep -F 'fixture-adb-serial' >/dev/null 2>&1; then
+  test_fail 'ADB serial was printed on failure'
 fi
 
-if [ "${1:-}" = "-s" ] && [ "${3:-}" = "push" ]; then
-  exit 0
-fi
-
-if [ "${1:-}" = "-s" ] && [ "${3:-}" = "shell" ]; then
-  command=${4:-}
-  if [ "$#" -ge 5 ]; then
-    command="$command $5"
-  fi
-  case "$command" in
-    'id -u') printf '%s\n' '0' ;;
-    'uname -r') printf '%s\n' '4.9.191' ;;
-    'grep -E "^(usbnet|cdc_ether) " /proc/modules') exit 1 ;;
-    mkdir\ -p\ * ) exit 0 ;;
-    *insmod* ) exit 0 ;;
-    'grep -q "^usbnet " /proc/modules && grep -q "^cdc_ether " /proc/modules') exit 0 ;;
-    *found=1* ) exit 0 ;;
-    *cat\ /proc/net/dev* ) printf '%s\n' 'Inter-| Receive | Transmit' ;;
-    *) exit 0 ;;
-  esac
-  exit 0
-fi
-
-exit 1
-EOF
-chmod +x "$SUCCESS_BIN/adb"
-
-if ! output=$(
-  PATH="$SUCCESS_BIN:$PATH" \
-  SUCCESS_ADB_LOG="$SUCCESS_ADB_LOG" \
-  AHT_PACKAGE_DIR="$PACKAGE_DIR" \
-  AHT_ALLOW_DEVICE_MUTATION=1 \
-  bash "$VERIFIER" --load 2>&1
-); then
-  printf '%s\n' 'FAIL: simulated successful module load should pass the gate' >&2
-  printf '%s\n' "$output" >&2
-  exit 1
-fi
-printf '%s\n' "$output" | grep 'PASS: modules loaded and CDC-ECM binding read back' >/dev/null
-if grep -q 'rmmod ' "$SUCCESS_ADB_LOG"; then
-  printf '%s\n' 'FAIL: successful module load unexpectedly attempted rollback' >&2
-  exit 1
-fi
-
-printf '%s\n' 'PASS: verifier rejects unsafe and incompatible packages'
+printf '%s\n' 'PASS: verifier enforces target identity, guarded load, readback, cleanup, and rollback'
