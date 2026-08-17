@@ -1,0 +1,54 @@
+# target_serial=5c000c28344588823dd
+# DJI USB descriptor evidence
+LSUSB_UNAVAILABLE: device has no lsusb
+SYSFS_DESCRIPTOR_FALLBACK
+[/sys/bus/usb/devices/1-1]
+idVendor=2ca3
+idProduct=4006
+manufacturer=BAIWANG
+product=Baiwang
+speed=480
+busnum=1
+devnum=3
+bDeviceClass=ef
+bDeviceSubClass=02
+bDeviceProtocol=01
+[/sys/bus/usb/devices/1-1:1.0]
+bInterfaceClass=ff
+bInterfaceSubClass=ff
+bInterfaceProtocol=ff
+modalias=usb:v2CA3p4006d0318dcEFdsc02dp01icFFiscFFipFFin00
+driver=UNBOUND
+[/sys/bus/usb/devices/1-1:1.1]
+bInterfaceClass=ff
+bInterfaceSubClass=00
+bInterfaceProtocol=00
+modalias=usb:v2CA3p4006d0318dcEFdsc02dp01icFFisc00ip00in01
+driver=UNBOUND
+[/sys/bus/usb/devices/1-1:1.2]
+bInterfaceClass=ff
+bInterfaceSubClass=00
+bInterfaceProtocol=00
+modalias=usb:v2CA3p4006d0318dcEFdsc02dp01icFFisc00ip00in02
+driver=UNBOUND
+[/sys/bus/usb/devices/1-1:1.3]
+bInterfaceClass=ff
+bInterfaceSubClass=00
+bInterfaceProtocol=00
+modalias=usb:v2CA3p4006d0318dcEFdsc02dp01icFFisc00ip00in03
+driver=UNBOUND
+[/sys/bus/usb/devices/1-1:1.4]
+bInterfaceClass=02
+bInterfaceSubClass=06
+bInterfaceProtocol=00
+interface=CDC Ethernet Control Model (ECM)
+modalias=usb:v2CA3p4006d0318dcEFdsc02dp01ic02isc06ip00in04
+driver=UNBOUND
+[/sys/bus/usb/devices/1-1:1.5]
+bInterfaceClass=0a
+bInterfaceSubClass=00
+bInterfaceProtocol=00
+modalias=usb:v2CA3p4006d0318dcEFdsc02dp01ic0Aisc00ip00in05
+driver=UNBOUND
+
+# adb_exit=0
