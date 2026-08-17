@@ -1,0 +1,19 @@
+:root {
+  --device-width: 1024px;
+  --device-height: 768px;
+  --page-bg: #080a0f;
+  --screen-bg: #0a0f16;
+  --ink: #eef4f5;
+  --muted: #94a3aa;
+  --line: rgba(255, 255, 255, 0.12);
+  --glass: rgba(255, 255, 255, 0.065);
+  --glass-strong: rgba(255, 255, 255, 0.1);
+  --orange: #ff9a3d;
+  --green: #66d69a;
+  --blue: #8db5ff;
+  --red: #ff6f72;
+  --purple: #b8a6ff;
+  --radius-card: 14px;
+  --radius-tile: 11px;
+  --icon-draw-size: 24px;
+}

@@ -1,0 +1,42 @@
+import { useEffect } from 'react';
+import type { Screen } from './types';
+
+interface HardwareShortcutOptions {
+  onNavigate: (screen: Screen) => void;
+  onBack: () => void;
+}
+
+const screenByKey: Record<string, Screen> = {
+  h: 'home',
+  n: 'needs',
+  a: 'agents',
+  s: 'servers',
+  t: 'terminal',
+};
+
+export function useHardwareShortcuts({ onNavigate, onBack }: HardwareShortcutOptions) {
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target;
+      if (target instanceof Element && target.matches('input, textarea, select, [contenteditable="true"]')) return;
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onBack();
+        return;
+      }
+      const key = event.key.toLowerCase();
+      const screen = screenByKey[key];
+      if (screen) {
+        event.preventDefault();
+        onNavigate(screen);
+        return;
+      }
+      if (key === 'v') {
+        event.preventDefault();
+        document.querySelector<HTMLElement>('[aria-label="语音"]')?.click();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onBack, onNavigate]);
+}
