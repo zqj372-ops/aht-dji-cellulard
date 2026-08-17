@@ -8,18 +8,16 @@
 
 **Tech Stack:** Linux kernel 4.9.191, AArch64 cross compiler, POSIX shell, ADB, readelf, SHA-256, Tina Linux 4.9.191 with CONFIG_MODULES=y and CONFIG_MODVERSIONS disabled.
 
-### Current status (2026-08-17)
+### Current status (2026-08-18)
 
 The host build, package/static checks, target-identity gates, fake-ADB load
 success/readback, reverse-order rollback, and fixture/device network state
-checks pass. The connected reference evidence confirms the exact
-`a133-aw3/generic v1.0` target contract, kernel build `#913`, kernel release,
-vermagic, compiler
-identity, and normalized kernel options, but the private vendor source tree
-and original compiler binary are still unavailable. The current read-only
-preflight reports zero ready ADB targets and no matching physical USB device;
-therefore the real `insmod`, CDC-ECM binding, DHCP, and Gateway gates remain
-blocked. No real-device mutation has been attempted.
+checks pass. On 2026-08-18, the exact connected A133 Tina reference target
+passed read-only preflight, explicitly authorized real `insmod` loading,
+CDC-ECM binding, netdev readback, DHCP, and the independent Gateway probe.
+The private vendor source tree and original compiler binary are still
+unavailable, so the static build provenance caveat remains. Equivalence to a
+separate BRICK PRO target is not claimed.
 
 A thin acceptance entrypoint now composes the existing static, preflight, load,
 and network verifiers into allowlisted evidence files. It does not make fixture
@@ -146,9 +144,9 @@ git commit -m "feat: verify and guard A133 USB module loading"
 - Modify: docs/superpowers/plans/2026-08-17-aht-phase-10-kernel-module-network-acceptance.md
 - Create: docs/verification/hardware/a133-tina-reference-01/phase-10-load.txt
 
-- [ ] Step 1: Reconfirm the device preflight.
+- [x] Step 1: Reconfirm the device preflight.
 
-> **Current status:** BLOCKED because the current read-only `adb devices` check has zero ready targets. No load attempt has been made.
+> **Current status:** Passed on 2026-08-18 with exactly one ready ADB target; the preflight completed without device mutation.
 
 Run the package-independent read-only preflight:
 
@@ -160,19 +158,19 @@ It must read back ADB readiness, root identity, kernel/target identity,
 `/proc/modules`, the `2ca3:4006` CDC-ECM control/data pair, and current module
 state. Do not change the device during this step.
 
-- [ ] Step 2: Load candidate modules only after explicit authorization.
+- [x] Step 2: Load candidate modules only after explicit authorization.
 
 Use the guarded verifier with AHT_ALLOW_DEVICE_MUTATION=1. Do not use insmod -f, do not change USB mode, and do not send AT commands. Capture exit codes, /proc/modules, bound cdc_ether/usbnet nodes, and the kernel log.
 
-- [ ] Step 3: Confirm or roll back the binding.
+- [x] Step 3: Confirm or roll back the binding.
 
 Pass only if cdc_ether and usbnet are loaded, the CDC-ECM interface is bound, and a cellular network interface appears. Otherwise unload both modules and record the exact failure without calling the device connected.
 
-> **Current status:** Not evaluated on the real target because the device is not currently ADB-ready. The fake-ADB rollback path is covered by the host test.
+> **Current status:** Passed on the real target: both modules are loaded, the CDC-ECM interface is bound, and `usb0` is present. The fake-ADB rollback path remains covered by the host test.
 
 - [x] Step 4: Commit load evidence or failure evidence.
 
-> **Current status:** A sanitized blocked-load record is present at `docs/verification/hardware/a133-tina-reference-01/phase-10-load.txt`; it records zero ready ADB targets and no mutation attempt.
+> **Current status:** A sanitized passed-load record is present at `docs/verification/hardware/a133-tina-reference-01/phase-10-load.txt`; it records the authorized load, binding, netdev readback, module retention, and remote file cleanup without serials or addresses.
 
 ~~~sh
 git add docs/verification/hardware/a133-tina-reference-01/phase-10-load.txt docs/superpowers/plans/2026-08-17-aht-phase-10-kernel-module-network-acceptance.md
@@ -202,15 +200,15 @@ Expected: FAIL because no network verifier exists.
 
 The default mode must only read the target USB binding, `ip` address/route state, DNS configuration, and an independently supplied Gateway endpoint. DHCP and route changes must require AHT_ALLOW_NETWORK_MUTATION=1; the verifier must never infer 4G from USB presence alone and must emit degraded/offline when any independent fact is missing.
 
-- [ ] Step 4: Run the network gate and record the result.
+- [x] Step 4: Run the network gate and record the result.
 
-> **Current status:** BLOCKED pending the device binding gate. The fixture verifier is covered and returns `degraded` unless every independent connectivity fact is present.
+> **Current status:** Passed on 2026-08-18 after binding. Authorized DHCP supplied an address, default route, and DNS; the Gateway probe passed using the DHCP default-route Gateway. The fixture verifier remains covered and returns `degraded` unless every independent connectivity fact is present.
 
 If DHCP succeeds, record interface/address/route and Gateway RTT without storing credentials or SIM identifiers. If it fails, keep the state degraded and preserve the failure evidence.
 
 - [x] Step 5: Commit network evidence.
 
-> **Current status:** A blocked-network record is present at `docs/verification/hardware/a133-tina-reference-01/phase-10-network.txt`; it records that the real network gate was not attempted because device binding was unavailable.
+> **Current status:** A sanitized passed-network record is present at `docs/verification/hardware/a133-tina-reference-01/phase-10-network.txt`; it records presence-only address/route/DNS state and the DHCP-derived Gateway probe without storing the value or credentials.
 
 ~~~sh
 git add scripts/verify-a133-tina-network.sh tests/test-a133-tina-network.sh docs/verification/hardware/a133-tina-reference-01/phase-10-network.txt
@@ -239,13 +237,13 @@ git diff --check
 
 - [x] Step 2: Audit every acceptance gate.
 
-> **Current status:** Build, package, static ELF/vermagic, hash, fixture-network, and rollback gates pass. Device load and real network gates remain blocked until the device is ready and separately authorized.
+> **Current status:** Build, package, static ELF/vermagic, hash, fixture-network, rollback, real device load/binding, and real network gates pass on the current exact A133 Tina reference target. Static source/toolchain provenance remains caveated, and BRICK PRO equivalence is not claimed.
 
 Confirm that the repository contains source/toolchain/config provenance, package checksums, static ELF/vermagic results, load readback, and network readback. If a gate is not proven, mark it blocked or degraded instead of claiming the driver is complete.
 
 - [x] Step 3: Commit only Phase 10 files and push a Draft PR.
 
-> **Current status:** Draft PR #3 is open on `agent/a133-tina-phase-10-driver`. Build and package gates pass; real device load and network gates remain blocked by the current zero-ready-device state.
+> **Current status:** Draft PR #3 is open on `agent/a133-tina-phase-10-driver`; after the real-device run, the load/binding and network evidence are recorded as passed for the current exact A133 Tina reference target.
 
 ~~~sh
 git status --short --branch

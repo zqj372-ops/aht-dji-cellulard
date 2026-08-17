@@ -38,8 +38,8 @@ Phase 10 acceptance status:
 | --- | --- | --- |
 | Build | Passed | Reproducible host build with recorded source, config, and toolchain inputs |
 | Package/static | Passed | SHA-256, AArch64 ELF, kernel release, vermagic, and module metadata checks |
-| Device load/binding | Blocked | The latest read-only ADB check found zero ready targets; no `insmod` was attempted |
-| Network | Blocked | Depends on successful device binding; no DHCP, route, or Gateway mutation was attempted |
+| Device load/binding | Passed | Real ADB target; `usbnet`/`cdc_ether` loaded, CDC-ECM bound, netdev readback verified; modules retained |
+| Network | Passed | DHCP assigned an address; `usb0`/default route/DNS and the DHCP default-route Gateway probe were verified |
 
 The checked-in Phase 9B evidence was sanitized with the redaction helper. It
 was not recollected from the device after that change because ADB was not ready;
@@ -51,8 +51,9 @@ were not found on the host. Official Brick firmware provenance now confirms the
 same `a133-aw3/generic v1.0` target family, `4.9.191` vermagic, GCC 7.4.1
 identity, and an option-equivalent kernel config; it still does not contain
 `usbnet.ko` or `cdc_ether.ko`, and the Brick/Pro reference-target relationship
-is not confirmed. The package must pass device-side load and binding readback
-before it is treated as accepted. See
+is not confirmed. The current target has now passed device-side load and binding
+readback as well as the real network gate. Equivalence to a separate BRICK PRO
+target remains unconfirmed. See
 `docs/verification/hardware/a133-tina-reference-01/vendor-firmware-provenance.txt`.
 
 Static package verification:
@@ -81,7 +82,9 @@ by `cdc_ether`, reads back `/proc/modules` and USB driver links, and rolls back
 on failure. It does not run DHCP or change routes. Network verification is
 separate; DHCP requires `AHT_ALLOW_NETWORK_MUTATION=1`, and the state is only
 `connected` when the cellular interface, address, default route, and an
-independent Gateway probe are all present.
+independent Gateway probe are all present. The real run used the Gateway
+provided by the device's DHCP default route; the value is intentionally not
+stored in the repository.
 
 The host test suite also exercises fake-ADB success/readback and reverse-order
 rollback after a simulated `cdc_ether` load failure. These tests validate the
