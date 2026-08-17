@@ -210,7 +210,9 @@ git diff --check
 
 Confirm that the repository contains source/toolchain/config provenance, package checksums, static ELF/vermagic results, load readback, and network readback. If a gate is not proven, mark it blocked or degraded instead of claiming the driver is complete.
 
-- [ ] Step 3: Commit only Phase 10 files and push a Draft PR.
+- [x] Step 3: Commit only Phase 10 files and push a Draft PR.
+
+> **Current status:** Draft PR #3 is open on `agent/a133-tina-phase-10-driver`. Build and package gates pass; real device load and network gates remain blocked by the current zero-ready-device state.
 
 ~~~sh
 git status --short --branch
