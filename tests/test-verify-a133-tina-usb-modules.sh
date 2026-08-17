@@ -89,7 +89,11 @@ if [ "${1:-}" = "-s" ] && [ "${3:-}" = "shell" ]; then
       printf '%s\n' '4.9.191'
       ;;
     *openwrt_release*)
-      printf '%s\n' "DISTRIB_TARGET='a133-aw3/generic v1.0'"
+      if [ "$scenario" = "wrong-release" ]; then
+        printf '%s\n' "DISTRIB_TARGET='a133-aw3/generic v1.0'"
+      else
+        printf '%s\n' "DISTRIB_TARGET='a133-aw3/generic'"
+      fi
       ;;
     *AHT_USB_IDENTITY_CHECK*)
       if [ "$scenario" = "reject" ]; then
@@ -171,6 +175,25 @@ if grep -E '(^| )push( |$)|shell.*mkdir -p|shell.*insmod' "$REJECT_LOG" >/dev/nu
 fi
 if printf '%s\n' "$output" | grep -F 'fixture-adb-serial' >/dev/null 2>&1; then
   test_fail 'ADB serial was printed on target rejection'
+fi
+
+RELEASE_LOG="$TEST_ROOT/release-adb.log"
+RELEASE_STATE="$TEST_ROOT/release-state"
+: > "$RELEASE_STATE"
+if output=$(
+  PATH="$FAKE_BIN:$PATH" \
+  FAKE_ADB_LOG="$RELEASE_LOG" \
+  FAKE_ADB_STATE="$RELEASE_STATE" \
+  FAKE_ADB_SCENARIO=wrong-release \
+  AHT_PACKAGE_DIR="$PACKAGE_DIR" \
+  AHT_ALLOW_DEVICE_MUTATION=1 \
+  sh "$VERIFIER" --load 2>&1
+); then
+  test_fail 'non-exact OpenWrt target was accepted'
+fi
+printf '%s\n' "$output" | grep 'OpenWrt target identity mismatch' >/dev/null
+if grep -E '(^| )push( |$)|shell.*mkdir -p|shell.*insmod' "$RELEASE_LOG" >/dev/null 2>&1; then
+  test_fail 'wrong OpenWrt target touched the device'
 fi
 
 SUCCESS_LOG="$TEST_ROOT/success-adb.log"

@@ -259,7 +259,7 @@ validate_device_gate() {
       value=$2
       if (substr(value, 1, 1) == single || substr(value, 1, 1) == double) value=substr(value, 2)
       if (substr(value, length(value), 1) == single || substr(value, length(value), 1) == double) value=substr(value, 1, length(value) - 1)
-      if (value == "a133-aw3/generic" || value ~ /^a133-aw3\/generic[[:space:]]/) found=1
+      if (value == "a133-aw3/generic") found=1
     }
     END { exit(found ? 0 : 1) }
   '; then
@@ -331,6 +331,8 @@ cleanup() {
     fi
     if [ "$REMOTE_MODULE_FILES_REMOVED" -eq 1 ]; then
       printf '%s\n' 'remote_module_files=removed' >&2
+    else
+      printf '%s\n' 'remote_module_files=not_removed' >&2
     fi
   fi
   if [ "$cleanup_failed" -ne 0 ]; then
