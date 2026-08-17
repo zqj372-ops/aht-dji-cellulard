@@ -26,13 +26,14 @@ export function App() {
   const decide = (decision: Decision) => {
     if (!selectedInboxId) return;
     if (!selectedAgent) return;
+    if (!runtime.decisionGate.allowed) return;
     void runtime.decide({ itemId: selectedInboxId, agentId: selectedAgent.id, decision });
   };
   useHardwareShortcuts({
     onNavigate: setCurrentScreen,
     onBack: () => setSelectedInboxId(null),
-    onApprove: selectedItem?.status === 'pending' ? () => decide('approve') : undefined,
-    onReject: selectedItem?.status === 'pending' ? () => decide('reject') : undefined,
+    onApprove: selectedItem?.status === 'pending' && runtime.decisionGate.allowed ? () => decide('approve') : undefined,
+    onReject: selectedItem?.status === 'pending' && runtime.decisionGate.allowed ? () => decide('reject') : undefined,
   });
 
   const screen = selectedItem && selectedAgent ? (
@@ -42,6 +43,7 @@ export function App() {
       source={runtime.source}
       onDecision={decide}
       onBack={() => setSelectedInboxId(null)}
+      decisionGate={runtime.decisionGate}
     />
   ) : currentScreen === 'needs' ? (
     <NeedsYouScreen inbox={state.inbox} agents={state.agents} onOpen={openInboxItem} />

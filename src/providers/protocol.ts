@@ -68,6 +68,8 @@ export interface GatewaySnapshot {
   schema_version: 1;
   revision: number;
   event_id: string;
+  generated_at: string;
+  permission_scope: string[];
   agents: GatewayAgent[];
   needs_you: GatewayNeedsYou[];
   servers: GatewayServer[];
@@ -93,6 +95,7 @@ export interface GatewayEventMessage {
   type: 'event';
   event_id: string;
   revision: number;
+  generated_at: string;
   event: GatewayEvent;
 }
 
@@ -144,11 +147,21 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === 'string');
+}
+
 function isSnapshot(value: unknown): value is GatewaySnapshot {
   if (!isRecord(value)) return false;
   return value.schema_version === 1
     && typeof value.revision === 'number'
     && typeof value.event_id === 'string'
+    && isNonEmptyString(value.generated_at)
+    && isStringArray(value.permission_scope)
     && Array.isArray(value.agents)
     && Array.isArray(value.needs_you)
     && Array.isArray(value.servers)
@@ -197,6 +210,7 @@ export function parseGatewayServerMessage(input: unknown): ParsedGatewayServerMe
   if (input.type === 'event'
     && typeof input.event_id === 'string'
     && typeof input.revision === 'number'
+    && isNonEmptyString(input.generated_at)
     && isRecord(input.event)
     && typeof input.event.type === 'string') {
     return input as unknown as GatewayEventMessage;

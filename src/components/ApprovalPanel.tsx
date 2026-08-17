@@ -1,5 +1,6 @@
 import type { Agent, Decision, InboxItem } from '../app/types';
-import type { DataSource } from '../providers/types';
+import { decisionGateMessage } from '../providers/trust';
+import type { DataSource, DecisionGate } from '../providers/types';
 
 interface ApprovalPanelProps {
   item: InboxItem;
@@ -7,10 +8,12 @@ interface ApprovalPanelProps {
   onDecision: (decision: Decision) => void;
   onBack: () => void;
   source: DataSource;
+  decisionGate: DecisionGate;
 }
 
-export function ApprovalPanel({ item, agent, onDecision, onBack, source }: ApprovalPanelProps) {
+export function ApprovalPanel({ item, agent, onDecision, onBack, source, decisionGate }: ApprovalPanelProps) {
   const decided = item.status !== 'pending';
+  const decisionBlocked = !decided && !decisionGate.allowed;
   const decisionSuffix = source === 'fixture' ? '（模拟）' : '（Gateway）';
   const decisionLabels = {
     approved: `已批准${decisionSuffix}`,
@@ -33,10 +36,13 @@ export function ApprovalPanel({ item, agent, onDecision, onBack, source }: Appro
         <div className="decision-result" role="status">{decisionLabels[item.status as keyof typeof decisionLabels]}</div>
       ) : (
         <div className="approval-actions" aria-label="审批操作">
-          <button type="button" className="action-button action-button--approve" onClick={() => onDecision('approve')}>批准</button>
-          <button type="button" className="action-button action-button--reject" onClick={() => onDecision('reject')}>拒绝</button>
-          <button type="button" className="action-button action-button--quiet" onClick={() => onDecision('defer')}>稍后</button>
+          <button type="button" className="action-button action-button--approve" disabled={decisionBlocked} onClick={() => onDecision('approve')}>批准</button>
+          <button type="button" className="action-button action-button--reject" disabled={decisionBlocked} onClick={() => onDecision('reject')}>拒绝</button>
+          <button type="button" className="action-button action-button--quiet" disabled={decisionBlocked} onClick={() => onDecision('defer')}>稍后</button>
         </div>
+      )}
+      {decisionBlocked && decisionGate.reason && (
+        <p className="decision-gate-message" role="status">{decisionGateMessage(decisionGate.reason)}</p>
       )}
     </section>
   );

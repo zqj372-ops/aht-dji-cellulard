@@ -1,5 +1,6 @@
 import { decideInboxItem, fixtureState } from './fixtureState';
 import type { AhtProvider, CommandAck, DecisionCommand, ProviderEvent } from '../types';
+import { createFixtureSnapshotTrust } from '../trust';
 
 export class FixtureProvider implements AhtProvider {
   readonly source = 'fixture' as const;
@@ -13,7 +14,7 @@ export class FixtureProvider implements AhtProvider {
 
   connect(): void {
     this.emit({ type: 'connection', state: 'connected' });
-    this.emit({ type: 'snapshot', snapshot: this.snapshot });
+    this.emit({ type: 'snapshot', snapshot: this.snapshot, snapshotTrust: createFixtureSnapshotTrust(new Date()) });
   }
 
   disconnect(): void {
@@ -22,7 +23,7 @@ export class FixtureProvider implements AhtProvider {
 
   async decide(command: DecisionCommand): Promise<CommandAck> {
     this.snapshot = decideInboxItem(this.snapshot, command.itemId, command.decision);
-    this.emit({ type: 'snapshot', snapshot: this.snapshot });
+    this.emit({ type: 'snapshot', snapshot: this.snapshot, snapshotTrust: createFixtureSnapshotTrust(new Date()) });
     const ack = { commandId: `fixture-${command.itemId}`, status: 'accepted' as const };
     this.emit({ type: 'command_ack', ack });
     return ack;

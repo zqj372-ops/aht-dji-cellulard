@@ -11,6 +11,8 @@ describe('aht.gateway.v1 protocol', () => {
         schema_version: 1,
         revision: 42,
         event_id: 'evt-42',
+        generated_at: '2026-08-18T03:00:00.000Z',
+        permission_scope: ['needs_you:read', 'needs_you:write'],
         agents: [],
         needs_you: [],
         servers: [],
@@ -23,6 +25,8 @@ describe('aht.gateway.v1 protocol', () => {
     expect(message.event_id).toBe('evt-42');
     expect(message.snapshot.schema_version).toBe(1);
     expect(message.snapshot.revision).toBe(42);
+    expect(message.snapshot.generated_at).toBe('2026-08-18T03:00:00.000Z');
+    expect(message.snapshot.permission_scope).toEqual(['needs_you:read', 'needs_you:write']);
   });
 
   test('rejects malformed and unknown messages as a typed protocol error', () => {
@@ -35,5 +39,24 @@ describe('aht.gateway.v1 protocol', () => {
     expect(message.type).toBe('protocol_error');
     if (message.type !== 'protocol_error') throw new Error('expected protocol error');
     expect(message.code).toBe('invalid_snapshot');
+  });
+
+  test('rejects a snapshot without Gateway authority metadata', () => {
+    const message = parseGatewayServerMessage({
+      protocol: 'aht.gateway.v1',
+      type: 'snapshot',
+      event_id: 'evt-43',
+      snapshot: {
+        schema_version: 1,
+        revision: 43,
+        event_id: 'evt-43',
+        agents: [],
+        needs_you: [],
+        servers: [],
+        network: null,
+      },
+    });
+
+    expect(message).toEqual(expect.objectContaining({ type: 'protocol_error', code: 'invalid_snapshot' }));
   });
 });

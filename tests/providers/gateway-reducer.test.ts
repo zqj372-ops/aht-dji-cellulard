@@ -6,6 +6,8 @@ const snapshot: GatewaySnapshot = {
   schema_version: 1,
   revision: 7,
   event_id: 'evt-7',
+  generated_at: '2026-08-18T03:00:00.000Z',
+  permission_scope: ['needs_you:read', 'needs_you:write'],
   agents: [{
     id: 'codex', type: 'codex', name: 'Codex', model: 'codex', server: 'tokyo-01',
     workspace: '/aht', session: 'codex-remote-1', status: 'waiting_approval',

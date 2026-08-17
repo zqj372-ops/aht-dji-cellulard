@@ -10,6 +10,8 @@ export function createGatewaySnapshot() {
     schema_version: 1,
     revision: 1,
     event_id: 'evt-1',
+    generated_at: new Date().toISOString(),
+    permission_scope: ['needs_you:read', 'needs_you:write'],
     agents: [
       {
         id: 'codex', type: 'codex', name: 'Codex', model: 'codex', server: 'tokyo-01',

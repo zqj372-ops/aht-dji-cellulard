@@ -9,6 +9,30 @@ export type ConnectionState =
   | 'disconnected'
   | 'error';
 
+export type SnapshotFreshness = 'fresh' | 'stale' | 'unknown';
+
+export interface SnapshotTrust {
+  source: DataSource;
+  eventId: string | null;
+  revision: number | null;
+  generatedAt: string | null;
+  receivedAt: string | null;
+  freshness: SnapshotFreshness;
+  staleReason: string | null;
+  permissionScope: string[];
+}
+
+export type DecisionGateReason =
+  | 'gateway_not_connected'
+  | 'gateway_snapshot_unavailable'
+  | 'gateway_snapshot_stale'
+  | 'permission_denied';
+
+export interface DecisionGate {
+  allowed: boolean;
+  reason: DecisionGateReason | null;
+}
+
 export interface DecisionCommand {
   itemId: string;
   agentId: string;
@@ -23,7 +47,7 @@ export interface CommandAck {
 
 export type ProviderEvent =
   | { type: 'connection'; state: ConnectionState; reason?: string }
-  | { type: 'snapshot'; snapshot: FixtureState; eventId?: string; stale?: boolean }
+  | { type: 'snapshot'; snapshot: FixtureState; snapshotTrust: SnapshotTrust; eventId?: string; stale?: boolean }
   | { type: 'command_ack'; ack: CommandAck }
   | { type: 'error'; code: string; message: string; retryable: boolean };
 

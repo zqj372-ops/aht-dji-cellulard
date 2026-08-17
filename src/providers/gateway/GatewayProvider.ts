@@ -4,6 +4,13 @@ import {
   toFixtureState,
 } from './reducer';
 import {
+  createUnknownGatewaySnapshotTrust,
+  deriveGatewaySnapshotTrust,
+  getDecisionGate,
+  markSnapshotTrustStale,
+} from '../trust';
+import type { ConnectionState, SnapshotTrust } from '../types';
+import {
   gatewayProtocol,
   parseGatewayServerMessage,
   type GatewaySnapshot,
@@ -24,6 +31,8 @@ export interface GatewayProviderOptions {
   clientId?: string;
   socketFactory?: (url: string) => WebSocketLike;
   reconnectDelaysMs?: number[];
+  nowFn?: () => number;
+  maxSnapshotAgeMs?: number;
   setTimeoutFn?: (callback: () => void, delay: number) => ReturnType<typeof setTimeout>;
   clearTimeoutFn?: (timer: ReturnType<typeof setTimeout>) => void;
 }
@@ -36,6 +45,8 @@ export class GatewayProvider implements AhtProvider {
   private readonly clientId: string;
   private readonly socketFactory: (url: string) => WebSocketLike;
   private readonly reconnectDelaysMs: number[];
+  private readonly nowFn: () => number;
+  private readonly maxSnapshotAgeMs: number;
   private readonly setTimeoutFn: (callback: () => void, delay: number) => ReturnType<typeof setTimeout>;
   private readonly clearTimeoutFn: (timer: ReturnType<typeof setTimeout>) => void;
   private readonly listeners = new Set<(event: ProviderEvent) => void>();
@@ -47,12 +58,16 @@ export class GatewayProvider implements AhtProvider {
   private reconnectAttempt = 0;
   private commandSequence = 0;
   private manuallyDisconnected = false;
+  private connectionState: ConnectionState = 'idle';
+  private snapshotTrust: SnapshotTrust = createUnknownGatewaySnapshotTrust();
 
   constructor(options: GatewayProviderOptions) {
     this.url = options.url;
     this.clientId = options.clientId ?? 'aht-browser';
     this.socketFactory = options.socketFactory ?? defaultSocketFactory;
     this.reconnectDelaysMs = options.reconnectDelaysMs ?? [250, 500, 1000, 2000, 5000];
+    this.nowFn = options.nowFn ?? (() => Date.now());
+    this.maxSnapshotAgeMs = options.maxSnapshotAgeMs ?? 30_000;
     this.setTimeoutFn = options.setTimeoutFn ?? ((callback, delay) => setTimeout(callback, delay));
     this.clearTimeoutFn = options.clearTimeoutFn ?? ((timer) => clearTimeout(timer));
   }
@@ -81,13 +96,26 @@ export class GatewayProvider implements AhtProvider {
       resolve({ commandId, status: 'rejected', reason: 'gateway_disconnected' });
     });
     this.pendingCommands.clear();
-    this.emit({ type: 'connection', state: 'disconnected', reason: 'client_stopped' });
+    this.emitConnection('disconnected', 'client_stopped');
   }
 
   decide(command: DecisionCommand): Promise<CommandAck> {
     const commandId = `${this.clientId}-${String(++this.commandSequence).padStart(4, '0')}`;
-    if (!this.socket || this.socket.readyState !== 1) {
-      return Promise.resolve({ commandId, status: 'rejected', reason: 'gateway_disconnected' });
+    this.refreshSnapshotTrustForDecision();
+    const gate = getDecisionGate('gateway', this.connectionState, this.snapshotTrust);
+    if (!gate.allowed) {
+      return Promise.resolve({ commandId, status: 'rejected', reason: gate.reason ?? 'gateway_not_connected' });
+    }
+    if (!this.socket || this.socket.readyState !== 1 || !this.gatewaySnapshot) {
+      return Promise.resolve({ commandId, status: 'rejected', reason: 'gateway_not_connected' });
+    }
+
+    const target = this.gatewaySnapshot.needs_you.find((item) => item.id === command.itemId);
+    if (!target || target.agent_id !== command.agentId || target.status !== 'pending') {
+      return Promise.resolve({ commandId, status: 'rejected', reason: 'invalid_target' });
+    }
+    if (!target.actions.includes(command.decision)) {
+      return Promise.resolve({ commandId, status: 'rejected', reason: 'action_not_allowed' });
     }
 
     const message = {
@@ -111,24 +139,26 @@ export class GatewayProvider implements AhtProvider {
 
   private openSocket(): void {
     if (!this.url) {
-      this.emit({ type: 'connection', state: 'error', reason: 'gateway_url_missing' });
+      this.emitConnection('error', 'gateway_url_missing');
       this.emit({ type: 'error', code: 'gateway_url_missing', message: 'Gateway 地址未配置', retryable: false });
       return;
     }
-    this.emit({
-      type: 'connection',
-      state: this.reconnectAttempt > 0 ? 'reconnecting' : 'connecting',
-    });
+    this.emitConnection(this.reconnectAttempt > 0 ? 'reconnecting' : 'connecting');
     try {
       const socket = this.socketFactory(this.url);
       this.socket = socket;
       socket.onopen = () => this.handleOpen();
       socket.onmessage = (event) => this.handleMessage(event.data);
-      socket.onerror = () => this.emit({
-        type: 'error', code: 'gateway_socket_error', message: 'Gateway WebSocket 出现错误', retryable: true,
-      });
+      socket.onerror = () => {
+        this.snapshotTrust = markSnapshotTrustStale(this.snapshotTrust, 'gateway_socket_error');
+        this.emitConnection('error', 'gateway_socket_error');
+        this.emit({
+          type: 'error', code: 'gateway_socket_error', message: 'Gateway WebSocket 出现错误', retryable: true,
+        });
+      };
       socket.onclose = () => this.handleClose();
     } catch {
+      this.snapshotTrust = markSnapshotTrustStale(this.snapshotTrust, 'gateway_unavailable');
       this.emit({ type: 'error', code: 'gateway_unavailable', message: 'Gateway WebSocket 无法建立', retryable: true });
       this.scheduleReconnect();
     }
@@ -153,12 +183,14 @@ export class GatewayProvider implements AhtProvider {
     try {
       input = typeof data === 'string' ? JSON.parse(data) : data;
     } catch {
+      this.snapshotTrust = markSnapshotTrustStale(this.snapshotTrust, 'invalid_json');
       this.emit({ type: 'error', code: 'invalid_json', message: 'Gateway 返回了非法 JSON', retryable: false });
       return;
     }
 
     const message = parseGatewayServerMessage(input);
     if (message.type === 'protocol_error') {
+      this.snapshotTrust = markSnapshotTrustStale(this.snapshotTrust, 'gateway_protocol_error');
       this.emit({ type: 'error', code: message.code, message: message.message, retryable: false });
       return;
     }
@@ -166,12 +198,19 @@ export class GatewayProvider implements AhtProvider {
     switch (message.type) {
       case 'hello_ack':
         this.reconnectAttempt = 0;
-        this.emit({ type: 'connection', state: 'connected' });
+        this.emitConnection('connected');
         break;
       case 'snapshot':
         this.gatewaySnapshot = message.snapshot;
         this.lastEventId = message.event_id;
-        this.emit({ type: 'snapshot', snapshot: toFixtureState(message.snapshot), eventId: message.event_id });
+        const snapshotReceivedAt = this.nowFn();
+        this.snapshotTrust = deriveGatewaySnapshotTrust(
+          message.snapshot,
+          snapshotReceivedAt,
+          snapshotReceivedAt,
+          this.maxSnapshotAgeMs,
+        );
+        this.emitSnapshot();
         break;
       case 'event':
         if (!this.gatewaySnapshot) {
@@ -182,9 +221,17 @@ export class GatewayProvider implements AhtProvider {
           ...applyGatewayEvent(this.gatewaySnapshot, message.event),
           revision: message.revision,
           event_id: message.event_id,
+          generated_at: message.generated_at,
         };
         this.lastEventId = message.event_id;
-        this.emit({ type: 'snapshot', snapshot: toFixtureState(this.gatewaySnapshot), eventId: message.event_id });
+        const receivedAt = this.nowFn();
+        this.snapshotTrust = deriveGatewaySnapshotTrust(
+          this.gatewaySnapshot,
+          receivedAt,
+          receivedAt,
+          this.maxSnapshotAgeMs,
+        );
+        this.emitSnapshot();
         break;
       case 'command_ack': {
         const ack: CommandAck = {
@@ -200,10 +247,12 @@ export class GatewayProvider implements AhtProvider {
       case 'resync_required':
         this.lastEventId = null;
         this.gatewaySnapshot = null;
-        this.emit({ type: 'connection', state: 'reconnecting', reason: `resync_required:${message.reason}` });
+        this.snapshotTrust = createUnknownGatewaySnapshotTrust(`resync_required:${message.reason}`);
+        this.emitConnection('reconnecting', `resync_required:${message.reason}`);
         this.sendHello();
         break;
       case 'error':
+        this.snapshotTrust = markSnapshotTrustStale(this.snapshotTrust, message.code);
         this.emit({ type: 'error', code: message.code, message: message.message, retryable: message.retryable });
         break;
     }
@@ -223,7 +272,8 @@ export class GatewayProvider implements AhtProvider {
   private handleClose(): void {
     this.socket = null;
     if (this.manuallyDisconnected) return;
-    this.emit({ type: 'connection', state: 'reconnecting', reason: 'gateway_closed' });
+    this.snapshotTrust = markSnapshotTrustStale(this.snapshotTrust, 'gateway_closed');
+    this.emitConnection('reconnecting', 'gateway_closed');
     this.scheduleReconnect();
   }
 
@@ -240,5 +290,34 @@ export class GatewayProvider implements AhtProvider {
 
   private emit(event: ProviderEvent): void {
     this.listeners.forEach((listener) => listener(event));
+  }
+
+  private refreshSnapshotTrustForDecision(): void {
+    if (!this.gatewaySnapshot || this.snapshotTrust.freshness !== 'fresh') return;
+    const receivedAtMs = this.snapshotTrust.receivedAt ? Date.parse(this.snapshotTrust.receivedAt) : Number.NaN;
+    if (!Number.isFinite(receivedAtMs)) return;
+    this.snapshotTrust = deriveGatewaySnapshotTrust(
+      this.gatewaySnapshot,
+      receivedAtMs,
+      this.nowFn(),
+      this.maxSnapshotAgeMs,
+    );
+    if (this.snapshotTrust.freshness !== 'fresh') this.emitSnapshot();
+  }
+
+  private emitConnection(state: ConnectionState, reason?: string): void {
+    this.connectionState = state;
+    this.emit({ type: 'connection', state, ...(reason ? { reason } : {}) });
+  }
+
+  private emitSnapshot(): void {
+    if (!this.gatewaySnapshot) return;
+    this.emit({
+      type: 'snapshot',
+      snapshot: toFixtureState(this.gatewaySnapshot),
+      snapshotTrust: this.snapshotTrust,
+      eventId: this.lastEventId ?? undefined,
+      stale: this.snapshotTrust.freshness !== 'fresh',
+    });
   }
 }

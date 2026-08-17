@@ -45,8 +45,19 @@ const gatewaySnapshot: GatewaySnapshot = {
   schema_version: 1,
   revision: 1,
   event_id: 'evt-1',
-  agents: [],
-  needs_you: [],
+  generated_at: '2026-08-18T03:00:00.000Z',
+  permission_scope: ['needs_you:read', 'needs_you:write'],
+  agents: [{
+    id: 'codex', type: 'codex', name: 'Codex', model: 'codex', server: 'tokyo-01',
+    workspace: '/aht', session: 'codex-remote-1', status: 'waiting_approval',
+    current_task: '生产部署审批', elapsed_seconds: 23, needs_user: true,
+    maturity: 'beta', capabilities: { approval: true },
+  }],
+  needs_you: [{
+    id: 'remote-approval', agent_id: 'codex', type: 'approval', title: '远程审批',
+    detail: '来自 Gateway 的审批', risk: 'high', created_at: '2026-08-18T03:00:00.000Z',
+    status: 'pending', actions: ['approve', 'reject'],
+  }],
   servers: [],
   network: null,
 };
@@ -62,6 +73,7 @@ describe('GatewayProvider', () => {
       url: 'ws://gateway.test',
       clientId: 'test-client',
       socketFactory: (url) => new FakeSocket(url),
+      nowFn: () => Date.parse('2026-08-18T03:00:01.000Z'),
       reconnectDelaysMs: [0],
     });
     provider.subscribe((event) => events.push(event));
@@ -75,7 +87,15 @@ describe('GatewayProvider', () => {
 
     first?.receive({ protocol: 'aht.gateway.v1', type: 'hello_ack', connection_id: 'conn-1', resume_supported: true });
     first?.receive({ protocol: 'aht.gateway.v1', type: 'snapshot', event_id: 'evt-1', snapshot: gatewaySnapshot });
-    expect(events.some((event) => event.type === 'snapshot')).toBe(true);
+    const snapshotEvent = events.find((event) => event.type === 'snapshot');
+    expect(snapshotEvent).toEqual(expect.objectContaining({
+      type: 'snapshot',
+      snapshotTrust: expect.objectContaining({
+        freshness: 'fresh',
+        generatedAt: gatewaySnapshot.generated_at,
+        permissionScope: gatewaySnapshot.permission_scope,
+      }),
+    }));
 
     first?.close();
     await new Promise((resolve) => setTimeout(resolve, 1));
@@ -91,11 +111,13 @@ describe('GatewayProvider', () => {
       url: 'ws://gateway.test',
       clientId: 'test-client',
       socketFactory: (url) => new FakeSocket(url),
+      nowFn: () => Date.parse('2026-08-18T03:00:01.000Z'),
     });
     provider.connect();
     const socket = FakeSocket.instances[0];
     socket?.open();
     socket?.receive({ protocol: 'aht.gateway.v1', type: 'hello_ack', connection_id: 'conn-1', resume_supported: true });
+    socket?.receive({ protocol: 'aht.gateway.v1', type: 'snapshot', event_id: 'evt-1', snapshot: gatewaySnapshot });
 
     const ackPromise = provider.decide({ itemId: 'remote-approval', agentId: 'codex', decision: 'approve' });
     const command = JSON.parse(socket?.sent[1] ?? '{}');
@@ -122,5 +144,120 @@ describe('GatewayProvider', () => {
 
     expect(events).toContainEqual(expect.objectContaining({ type: 'error', code: 'invalid_snapshot' }));
     provider.disconnect();
+  });
+
+  test('locks decisions after a socket error instead of sending on a broken connection', async () => {
+    const provider = new GatewayProvider({
+      url: 'ws://gateway.test',
+      clientId: 'test-client',
+      socketFactory: (url) => new FakeSocket(url),
+      nowFn: () => Date.parse('2026-08-18T03:00:01.000Z'),
+    });
+    provider.connect();
+    const socket = FakeSocket.instances[0];
+    socket?.open();
+    socket?.receive({ protocol: 'aht.gateway.v1', type: 'hello_ack', connection_id: 'conn-1', resume_supported: true });
+    socket?.receive({ protocol: 'aht.gateway.v1', type: 'snapshot', event_id: 'evt-1', snapshot: gatewaySnapshot });
+
+    socket?.fail();
+    const ack = await provider.decide({ itemId: 'remote-approval', agentId: 'codex', decision: 'approve' });
+
+    expect(ack).toMatchObject({ status: 'rejected', reason: 'gateway_not_connected' });
+    expect(socket?.sent.some((message) => JSON.parse(message).type === 'command')).toBe(false);
+    provider.disconnect();
+  });
+
+  test('rejects a stale snapshot without sending a remote command', async () => {
+    const provider = new GatewayProvider({
+      url: 'ws://gateway.test',
+      clientId: 'test-client',
+      socketFactory: (url) => new FakeSocket(url),
+      nowFn: () => Date.parse('2026-08-18T03:00:31.000Z'),
+      maxSnapshotAgeMs: 30_000,
+    });
+    provider.connect();
+    const socket = FakeSocket.instances[0];
+    socket?.open();
+    socket?.receive({ protocol: 'aht.gateway.v1', type: 'hello_ack', connection_id: 'conn-1', resume_supported: true });
+    socket?.receive({ protocol: 'aht.gateway.v1', type: 'snapshot', event_id: 'evt-1', snapshot: gatewaySnapshot });
+
+    const ackPromise = provider.decide({ itemId: 'remote-approval', agentId: 'codex', decision: 'approve' });
+    const commandSent = socket?.sent.some((message) => JSON.parse(message).type === 'command');
+    provider.disconnect();
+    await expect(ackPromise).resolves.toMatchObject({ status: 'rejected', reason: 'gateway_snapshot_stale' });
+    expect(commandSent).toBe(false);
+  });
+
+  test('re-evaluates snapshot age at decision time', async () => {
+    let now = Date.parse('2026-08-18T03:00:01.000Z');
+    const provider = new GatewayProvider({
+      url: 'ws://gateway.test',
+      clientId: 'test-client',
+      socketFactory: (url) => new FakeSocket(url),
+      nowFn: () => now,
+      maxSnapshotAgeMs: 30_000,
+    });
+    provider.connect();
+    const socket = FakeSocket.instances[0];
+    socket?.open();
+    socket?.receive({ protocol: 'aht.gateway.v1', type: 'hello_ack', connection_id: 'conn-1', resume_supported: true });
+    socket?.receive({
+      protocol: 'aht.gateway.v1',
+      type: 'snapshot',
+      event_id: 'evt-1',
+      snapshot: { ...gatewaySnapshot, generated_at: '2026-08-18T03:00:01.000Z' },
+    });
+
+    now = Date.parse('2026-08-18T03:00:32.000Z');
+    const ack = await provider.decide({ itemId: 'remote-approval', agentId: 'codex', decision: 'approve' });
+
+    expect(ack).toMatchObject({ status: 'rejected', reason: 'gateway_snapshot_stale' });
+    expect(socket?.sent.some((message) => JSON.parse(message).type === 'command')).toBe(false);
+    provider.disconnect();
+  });
+
+  test('rejects a read-only snapshot without sending a remote command', async () => {
+    const provider = new GatewayProvider({
+      url: 'ws://gateway.test',
+      clientId: 'test-client',
+      socketFactory: (url) => new FakeSocket(url),
+      nowFn: () => Date.parse('2026-08-18T03:00:01.000Z'),
+    });
+    provider.connect();
+    const socket = FakeSocket.instances[0];
+    socket?.open();
+    socket?.receive({ protocol: 'aht.gateway.v1', type: 'hello_ack', connection_id: 'conn-1', resume_supported: true });
+    socket?.receive({
+      protocol: 'aht.gateway.v1',
+      type: 'snapshot',
+      event_id: 'evt-1',
+      snapshot: { ...gatewaySnapshot, permission_scope: ['needs_you:read'] },
+    });
+
+    const ackPromise = provider.decide({ itemId: 'remote-approval', agentId: 'codex', decision: 'approve' });
+    const commandSent = socket?.sent.some((message) => JSON.parse(message).type === 'command');
+    provider.disconnect();
+    await expect(ackPromise).resolves.toMatchObject({ status: 'rejected', reason: 'permission_denied' });
+    expect(commandSent).toBe(false);
+  });
+
+  test('rejects a decision that is not offered by the Gateway target', async () => {
+    const provider = new GatewayProvider({
+      url: 'ws://gateway.test',
+      clientId: 'test-client',
+      socketFactory: (url) => new FakeSocket(url),
+      nowFn: () => Date.parse('2026-08-18T03:00:01.000Z'),
+    });
+    provider.connect();
+    const socket = FakeSocket.instances[0];
+    socket?.open();
+    socket?.receive({ protocol: 'aht.gateway.v1', type: 'hello_ack', connection_id: 'conn-1', resume_supported: true });
+    socket?.receive({ protocol: 'aht.gateway.v1', type: 'snapshot', event_id: 'evt-1', snapshot: gatewaySnapshot });
+
+    const ackPromise = provider.decide({ itemId: 'remote-approval', agentId: 'codex', decision: 'defer' });
+    const commandSent = socket?.sent.some((message) => JSON.parse(message).type === 'command');
+    provider.disconnect();
+    await expect(ackPromise).resolves.toMatchObject({ status: 'rejected', reason: 'action_not_allowed' });
+    expect(commandSent).toBe(false);
   });
 });

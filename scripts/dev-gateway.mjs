@@ -61,14 +61,16 @@ server.on('connection', (socket) => {
     send(socket, { type: 'command_ack', command_id: message.command_id, status: 'accepted' });
     const status = message.command === 'approve' ? 'approved' : message.command === 'reject' ? 'rejected' : 'deferred';
     const eventId = nextGatewayEventId();
+    const generatedAt = new Date().toISOString();
     snapshot = {
       ...snapshot,
       revision: snapshot.revision + 1,
       event_id: eventId,
+      generated_at: generatedAt,
       needs_you: snapshot.needs_you.map((item) => item.id === target.id ? { ...item, status } : item),
     };
     const eventMessage = {
-      type: 'event', event_id: eventId, revision: snapshot.revision,
+      type: 'event', event_id: eventId, revision: snapshot.revision, generated_at: generatedAt,
       event: { type: 'needs_you_resolved', needs_you_id: target.id, status },
     };
     rememberEvent(eventMessage);
