@@ -205,6 +205,20 @@ fi
 printf '%s\n' "$output" | grep 'unsafe' >/dev/null
 [ ! -s "$FAKE_LOG" ]
 
+: > "$FAKE_LOG"
+if output=$(
+  PATH="$FAKE_BIN:$PATH" \
+  FAKE_ADB_LOG="$FAKE_LOG" \
+  AHT_CELLULAR_INTERFACE='-i' \
+  AHT_GATEWAY_HOST=gateway.example \
+  sh "$VERIFIER" --device 2>&1
+); then
+  printf '%s\n' 'FAIL: option-like interface input should be rejected' >&2
+  exit 1
+fi
+printf '%s\n' "$output" | grep 'unsafe' >/dev/null
+[ ! -s "$FAKE_LOG" ]
+
 if output=$(
   PATH="$FAKE_BIN:$PATH" \
   FAKE_ADB_LOG="$FAKE_LOG" \
@@ -213,6 +227,20 @@ if output=$(
   sh "$VERIFIER" --device 2>&1
 ); then
   printf '%s\n' 'FAIL: unsafe gateway input should be rejected' >&2
+  exit 1
+fi
+printf '%s\n' "$output" | grep 'unsafe' >/dev/null
+[ ! -s "$FAKE_LOG" ]
+
+: > "$FAKE_LOG"
+if output=$(
+  PATH="$FAKE_BIN:$PATH" \
+  FAKE_ADB_LOG="$FAKE_LOG" \
+  AHT_CELLULAR_INTERFACE=cdc0 \
+  AHT_GATEWAY_HOST='-c' \
+  sh "$VERIFIER" --device 2>&1
+); then
+  printf '%s\n' 'FAIL: option-like gateway input should be rejected' >&2
   exit 1
 fi
 printf '%s\n' "$output" | grep 'unsafe' >/dev/null

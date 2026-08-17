@@ -15,6 +15,9 @@ usage() {
 validate_interface_value() {
   value=$1
   case "$value" in
+    -*) fail 'unsafe cellular interface value' ;;
+  esac
+  case "$value" in
     ''|*[!ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_.-]*)
       fail 'unsafe cellular interface value'
       ;;
@@ -23,6 +26,9 @@ validate_interface_value() {
 
 validate_gateway_value() {
   value=$1
+  case "$value" in
+    -*) fail 'unsafe Gateway host value' ;;
+  esac
   case "$value" in
     ''|*[!ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_.:-]*)
       fail 'unsafe Gateway host value'
