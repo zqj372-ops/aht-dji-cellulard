@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
-import { decideInboxItem, fixtureState, getNeedsYouCount } from './fixtureState';
+import { getNeedsYouCount } from './fixtureState';
 import type { Decision, Screen } from './types';
 import { useHardwareShortcuts } from './useHardwareShortcuts';
+import { useAhtRuntime } from './useAhtRuntime';
 import { DeviceFrame } from '../components/DeviceFrame';
 import { ApprovalPanel } from '../components/ApprovalPanel';
 import { HomeScreen } from '../screens/HomeScreen';
@@ -12,9 +13,9 @@ import { TerminalScreen } from '../screens/TerminalScreen';
 
 export function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('home');
-  const [state, setState] = useState(fixtureState);
   const [selectedInboxId, setSelectedInboxId] = useState<string | null>(null);
-  useHardwareShortcuts({ onNavigate: setCurrentScreen, onBack: () => setSelectedInboxId(null) });
+  const runtime = useAhtRuntime();
+  const { state } = runtime;
   const selectedItem = state.inbox.find((item) => item.id === selectedInboxId) ?? null;
   const selectedAgent = useMemo(
     () => selectedItem ? state.agents.find((agent) => agent.id === selectedItem.agentId) ?? null : null,
@@ -24,11 +25,24 @@ export function App() {
   const openInboxItem = (itemId: string) => setSelectedInboxId(itemId);
   const decide = (decision: Decision) => {
     if (!selectedInboxId) return;
-    setState((current) => decideInboxItem(current, selectedInboxId, decision));
+    if (!selectedAgent) return;
+    void runtime.decide({ itemId: selectedInboxId, agentId: selectedAgent.id, decision });
   };
+  useHardwareShortcuts({
+    onNavigate: setCurrentScreen,
+    onBack: () => setSelectedInboxId(null),
+    onApprove: selectedItem?.status === 'pending' ? () => decide('approve') : undefined,
+    onReject: selectedItem?.status === 'pending' ? () => decide('reject') : undefined,
+  });
 
   const screen = selectedItem && selectedAgent ? (
-    <ApprovalPanel item={selectedItem} agent={selectedAgent} onDecision={decide} onBack={() => setSelectedInboxId(null)} />
+    <ApprovalPanel
+      item={selectedItem}
+      agent={selectedAgent}
+      source={runtime.source}
+      onDecision={decide}
+      onBack={() => setSelectedInboxId(null)}
+    />
   ) : currentScreen === 'needs' ? (
     <NeedsYouScreen inbox={state.inbox} agents={state.agents} onOpen={openInboxItem} />
   ) : currentScreen === 'agents' ? (
@@ -42,9 +56,20 @@ export function App() {
   );
 
   return (
-    <DeviceFrame state={state} currentScreen={currentScreen} onNavigate={setCurrentScreen}>
+    <DeviceFrame
+      state={state}
+      currentScreen={currentScreen}
+      onNavigate={setCurrentScreen}
+      source={runtime.source}
+      connection={runtime.connection}
+      stale={runtime.stale}
+      error={runtime.error}
+      onSourceChange={runtime.setSource}
+    >
       {screen}
-      <p className="fixture-note">本地模拟数据 · {getNeedsYouCount(state)} 项待处理 · 面板 {state.display.panel}</p>
+      <p className="fixture-note">
+        {runtime.source === 'fixture' ? '本地模拟数据' : 'Gateway authority 数据'} · {getNeedsYouCount(state)} 项待处理 · 面板 {state.display.panel}
+      </p>
     </DeviceFrame>
   );
 }

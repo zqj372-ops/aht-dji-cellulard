@@ -4,8 +4,8 @@ import { AgentIcon } from '../components/AgentIcon';
 interface AgentsScreenProps { agents: Agent[]; }
 
 const statusLabels: Record<Agent['status'], string> = {
-  idle: '空闲', starting: '启动中', running: '运行中', waiting_input: '等待输入',
-  waiting_approval: '等待批准', completed: '已完成', error: '错误', stopped: '已停止', disconnected: '已断开',
+  idle: '空闲', running: '运行中', waiting_input: '等待输入',
+  waiting_approval: '等待批准', completed: '已完成', error: '错误', disconnected: '已断开',
 };
 
 export function AgentsScreen({ agents }: AgentsScreenProps) {

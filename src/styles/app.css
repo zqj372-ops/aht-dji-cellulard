@@ -34,6 +34,14 @@ button { cursor: pointer; }
 .prototype-agent { display: flex; align-items: center; gap: 9px; min-width: 0; padding: 10px; border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--glass); }
 .prototype-agent span { overflow: hidden; color: var(--ink); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .fixture-note { margin: 18px 0 0; color: #71808a; font-size: 10px; }
+.runtime-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 24px; margin-top: 7px; }
+.connection-status { color: #9aa9b0; font-size: 9px; }
+.connection-status--connected { color: var(--green); }
+.connection-status--connecting, .connection-status--reconnecting { color: var(--orange); }
+.connection-status--error, .connection-status--disconnected { color: #ffb5b5; }
+.data-source-control { display: flex; align-items: center; gap: 5px; color: #71808a; font-size: 9px; }
+.data-source-button { padding: 4px 7px; border: 1px solid var(--line); border-radius: 6px; color: #819098; background: transparent; font-size: 9px; }
+.data-source-button:hover, .data-source-button--active { color: var(--ink); border-color: rgba(141,181,255,.42); background: rgba(141,181,255,.12); }
 .inbox-list { display: grid; gap: 10px; }
 .inbox-card { width: 100%; display: flex; align-items: center; gap: 13px; padding: 13px 15px; color: var(--ink); text-align: left; border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--glass); transition: border-color .16s ease, background .16s ease, transform .16s ease; }
 .inbox-card:hover, .inbox-card:focus-visible { border-color: rgba(255,154,61,.58); background: linear-gradient(90deg, rgba(255,154,61,.13), rgba(255,255,255,.06)); outline: none; transform: translateY(-1px); }
@@ -127,6 +135,8 @@ button { cursor: pointer; }
   .status-bar { font-size: 9px; gap: 8px; }
   .status-bar__left, .status-bar__right { gap: 6px; }
   .display-contract { font-size: 8px; }
+  .runtime-footer { gap: 7px; }
+  .data-source-control > span { display: none; }
   .navigation-bar { gap: 8px; font-size: 9px; }
   .navigation-bar__counts { display: none; }
   .navigation-hint { font-size: 8px; }

@@ -4,6 +4,8 @@ import type { Screen } from './types';
 interface HardwareShortcutOptions {
   onNavigate: (screen: Screen) => void;
   onBack: () => void;
+  onApprove?: () => void;
+  onReject?: () => void;
 }
 
 const screenByKey: Record<string, Screen> = {
@@ -14,7 +16,7 @@ const screenByKey: Record<string, Screen> = {
   t: 'terminal',
 };
 
-export function useHardwareShortcuts({ onNavigate, onBack }: HardwareShortcutOptions) {
+export function useHardwareShortcuts({ onNavigate, onBack, onApprove, onReject }: HardwareShortcutOptions) {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       const target = event.target;
@@ -25,6 +27,16 @@ export function useHardwareShortcuts({ onNavigate, onBack }: HardwareShortcutOpt
         return;
       }
       const key = event.key.toLowerCase();
+      if (key === 'a' && onApprove) {
+        event.preventDefault();
+        onApprove();
+        return;
+      }
+      if (key === 'x' && onReject) {
+        event.preventDefault();
+        onReject();
+        return;
+      }
       const screen = screenByKey[key];
       if (screen) {
         event.preventDefault();
@@ -38,5 +50,5 @@ export function useHardwareShortcuts({ onNavigate, onBack }: HardwareShortcutOpt
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onBack, onNavigate]);
+  }, [onApprove, onBack, onNavigate, onReject]);
 }

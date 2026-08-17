@@ -1,16 +1,20 @@
 export type AgentStatus =
   | 'idle'
-  | 'starting'
   | 'running'
   | 'waiting_input'
   | 'waiting_approval'
   | 'completed'
   | 'error'
-  | 'stopped'
   | 'disconnected';
 
-export type Availability = 'stable' | 'developer_preview';
-export type InboxKind = 'approval' | 'question' | 'completed' | 'error';
+export type Availability =
+  | 'stable'
+  | 'beta'
+  | 'developer_preview'
+  | 'generic'
+  | 'unavailable'
+  | 'planned';
+export type InboxKind = 'approval' | 'question' | 'completed' | 'error' | 'security' | 'server_alert';
 export type RiskLevel = 'low' | 'medium' | 'high';
 export type Decision = 'approve' | 'reject' | 'defer';
 export type Screen = 'home' | 'needs' | 'agents' | 'servers' | 'terminal';
@@ -30,13 +34,21 @@ export interface AgentCapabilitySet {
 
 export interface Agent {
   id: string;
+  type: string;
   displayName: string;
   shortName: string;
+  model: string | null;
+  server: string | null;
+  workspace: string | null;
+  session: string | null;
   icon: string;
   status: AgentStatus;
   availability: Availability;
   project: string;
   summary: string;
+  currentTask: string | null;
+  elapsed: number | null;
+  needsUser: boolean;
   capabilities: AgentCapabilitySet;
 }
 
@@ -49,6 +61,8 @@ export interface InboxItem {
   risk: RiskLevel;
   timeLabel: string;
   status: 'pending' | 'approved' | 'rejected' | 'deferred';
+  actions?: Decision[];
+  createdAt?: string;
 }
 
 export interface ServerSnapshot {
@@ -65,14 +79,14 @@ export interface ServerSnapshot {
   gateway: 'online' | 'offline';
   tailscale: 'online' | 'offline';
   ssh: 'online' | 'offline';
-  dataSource: 'fixture';
+  dataSource: 'fixture' | 'gateway';
 }
 
 export interface FixtureState {
   agents: Agent[];
   inbox: InboxItem[];
   servers: ServerSnapshot[];
-  network: { link: 'Wi-Fi' | '4G'; rtt: number; vpn: boolean; signal: number };
+  network: { link: 'Wi-Fi' | '4G' | 'offline'; rtt: number; vpn: boolean; signal: number };
   battery: number;
   display: { width: 1024; height: 768; refreshRate: 60; rotation: 0; panel: 'gh7003' };
 }

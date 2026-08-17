@@ -1,4 +1,4 @@
-import type { Agent, InboxItem } from '../app/types';
+import type { Agent, InboxItem, InboxKind } from '../app/types';
 import { AgentIcon } from './AgentIcon';
 
 interface InboxCardProps {
@@ -7,12 +7,14 @@ interface InboxCardProps {
   onOpen: (itemId: string) => void;
 }
 
-const kindLabels = {
+const kindLabels: Record<InboxKind, string> = {
   approval: '需要确认',
   question: '需要回答',
   completed: '已完成',
   error: '需要复核',
-} as const;
+  security: '安全确认',
+  server_alert: '服务器告警',
+};
 
 export function InboxCard({ item, agent, onOpen }: InboxCardProps) {
   return (

@@ -1,20 +1,22 @@
 import type { Agent, Decision, InboxItem } from '../app/types';
+import type { DataSource } from '../providers/types';
 
 interface ApprovalPanelProps {
   item: InboxItem;
   agent: Agent;
   onDecision: (decision: Decision) => void;
   onBack: () => void;
+  source: DataSource;
 }
 
-const decisionLabels = {
-  approved: '已批准（模拟）',
-  rejected: '已拒绝（模拟）',
-  deferred: '已稍后处理（模拟）',
-} as const;
-
-export function ApprovalPanel({ item, agent, onDecision, onBack }: ApprovalPanelProps) {
+export function ApprovalPanel({ item, agent, onDecision, onBack, source }: ApprovalPanelProps) {
   const decided = item.status !== 'pending';
+  const decisionSuffix = source === 'fixture' ? '（模拟）' : '（Gateway）';
+  const decisionLabels = {
+    approved: `已批准${decisionSuffix}`,
+    rejected: `已拒绝${decisionSuffix}`,
+    deferred: `已稍后处理${decisionSuffix}`,
+  } as const;
   return (
     <section className="approval-panel" aria-labelledby="approval-heading">
       <button type="button" className="back-button" onClick={onBack}>‹ 返回 Needs You</button>

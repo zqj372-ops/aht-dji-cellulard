@@ -35,7 +35,7 @@ export function NavigationBar({ currentScreen, onNavigate, agentCount, serverCou
           </button>
         ))}
       </div>
-      <span className="navigation-hint">A 查看　B 返回　FN 语音</span>
+      <span className="navigation-hint">A 查看/批准　X 拒绝　B 返回　FN 语音</span>
     </nav>
   );
 }
