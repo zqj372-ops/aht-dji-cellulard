@@ -4,9 +4,11 @@ set -eu
 
 usage() {
   cat <<'EOF'
-Usage: AHT_PACKAGE_DIR=/path/to/package scripts/verify-a133-tina-usb-modules.sh [--static|--load]
+Usage: [AHT_PACKAGE_DIR=/path/to/package] scripts/verify-a133-tina-usb-modules.sh [--static|--preflight|--load]
 
 --static verifies hashes, metadata, ELF architecture, and kernel compatibility only.
+--preflight verifies one root ADB target, the exact A133 Tina identity, the
+           2ca3:4006 CDC-ECM pair, and an unloaded module state without mutation.
 --load additionally pushes modules to one root ADB target and loads them temporarily;
        it requires AHT_ALLOW_DEVICE_MUTATION=1 and never changes USB mode or network state.
 EOF
@@ -24,20 +26,24 @@ fi
 
 MODE=${1:---static}
 case "$MODE" in
-  --static|--load) ;;
+  --static|--preflight|--load) ;;
   *) usage >&2; exit 2 ;;
 esac
 
 PACKAGE_DIR=${AHT_PACKAGE_DIR:-}
-[ -n "$PACKAGE_DIR" ] || fail 'AHT_PACKAGE_DIR is required'
-[ -d "$PACKAGE_DIR" ] || fail 'package directory is missing'
+if [ "$MODE" != "--preflight" ]; then
+  [ -n "$PACKAGE_DIR" ] || fail 'AHT_PACKAGE_DIR is required'
+  [ -d "$PACKAGE_DIR" ] || fail 'package directory is missing'
+fi
 
 if [ "$MODE" = "--load" ] && [ "${AHT_ALLOW_DEVICE_MUTATION:-}" != "1" ]; then
   fail 'device load requires AHT_ALLOW_DEVICE_MUTATION=1'
 fi
 
 MANIFEST="$PACKAGE_DIR/manifest.json"
-[ -r "$MANIFEST" ] || fail 'manifest is missing'
+if [ "$MODE" != "--preflight" ]; then
+  [ -r "$MANIFEST" ] || fail 'manifest is missing'
+fi
 
 manifest_value() {
   key=$1
@@ -96,7 +102,9 @@ if [ "$MODE" = "--static" ]; then
   exit 0
 fi
 
-verify_static >/dev/null
+if [ "$MODE" = "--load" ]; then
+  verify_static >/dev/null
+fi
 command -v adb >/dev/null 2>&1 || fail 'adb is required for device load'
 
 DEVICE_SERIAL=
@@ -367,6 +375,14 @@ trap 'on_signal 143' 15
 
 validate_device_gate
 require_module_state MODULES_ABSENT
+
+if [ "$MODE" = "--preflight" ]; then
+  printf '%s\n' 'PASS: read-only A133 Tina device preflight'
+  printf '%s\n' 'status=preflight_passed'
+  printf '%s\n' 'module_state=absent'
+  printf '%s\n' 'device_mutation=unchanged'
+  exit 0
+fi
 
 REMOTE_DIR="/tmp/aht-dji-cellulard-driver.$$"
 MUTATION_STARTED=1

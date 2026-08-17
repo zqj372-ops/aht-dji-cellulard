@@ -155,6 +155,25 @@ exit 1
 EOF
 chmod +x "$FAKE_BIN/adb"
 
+PREFLIGHT_LOG="$TEST_ROOT/preflight-adb.log"
+PREFLIGHT_STATE="$TEST_ROOT/preflight-state"
+: > "$PREFLIGHT_STATE"
+if ! output=$(
+  PATH="$FAKE_BIN:$PATH" \
+  FAKE_ADB_LOG="$PREFLIGHT_LOG" \
+  FAKE_ADB_STATE="$PREFLIGHT_STATE" \
+  FAKE_ADB_SCENARIO=success \
+  sh "$VERIFIER" --preflight 2>&1
+); then
+  test_fail 'read-only device preflight failed without a package or mutation flag'
+fi
+printf '%s\n' "$output" | grep 'status=preflight_passed' >/dev/null
+printf '%s\n' "$output" | grep 'module_state=absent' >/dev/null
+printf '%s\n' "$output" | grep 'device_mutation=unchanged' >/dev/null
+if grep -E 'push|mkdir -p|insmod|rmmod|rm -f|rmdir' "$PREFLIGHT_LOG" >/dev/null 2>&1; then
+  test_fail 'read-only preflight attempted a device mutation'
+fi
+
 REJECT_LOG="$TEST_ROOT/reject-adb.log"
 REJECT_STATE="$TEST_ROOT/reject-state"
 : > "$REJECT_STATE"

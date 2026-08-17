@@ -61,6 +61,13 @@ AHT_PACKAGE_DIR="$PWD/artifacts/a133-tina-reference-01" \
   bash scripts/verify-a133-tina-usb-modules.sh --static
 ```
 
+The device gate has a separate read-only preflight that does not require the
+package or a mutation flag:
+
+```sh
+sh scripts/verify-a133-tina-usb-modules.sh --preflight
+```
+
 Device loading is guarded and temporary. It requires
 `AHT_ALLOW_DEVICE_MUTATION=1`, pushes only to `/tmp`, loads `usbnet` followed
 by `cdc_ether`, reads back `/proc/modules` and USB driver links, and rolls back

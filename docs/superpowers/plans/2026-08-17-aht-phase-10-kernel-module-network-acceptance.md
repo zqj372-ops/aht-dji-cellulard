@@ -144,7 +144,15 @@ git commit -m "feat: verify and guard A133 USB module loading"
 
 > **Current status:** BLOCKED because the current read-only `adb devices` check has zero ready targets. No load attempt has been made.
 
-Read back ADB readiness, root identity, uname -a, /proc/modules, /sys/bus/usb/devices/1-1, and current network interfaces. Do not change the device during this step.
+Run the package-independent read-only preflight:
+
+~~~sh
+sh scripts/verify-a133-tina-usb-modules.sh --preflight
+~~~
+
+It must read back ADB readiness, root identity, kernel/target identity,
+`/proc/modules`, the `2ca3:4006` CDC-ECM control/data pair, and current module
+state. Do not change the device during this step.
 
 - [ ] Step 2: Load candidate modules only after explicit authorization.
 
