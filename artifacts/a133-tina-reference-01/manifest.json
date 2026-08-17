@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "target_kernel_release": "4.9.191",
+  "arch": "arm64",
+  "source_id": "linux-4.9.191-stable",
+  "source_archive_sha256": "ded4b87406deb67112b25a2283e8b5c89c2b47e2de14a97acda57f74cd38b7bc",
+  "config_sha256": "4594144ccfb0e023e3dae3ebb4bdedcea853e209f23a986e39b398bc503f4c65",
+  "compiler_machine": "aarch64-elf",
+  "toolchain_version": "aarch64-elf-gcc (GCC) 16.2.0",
+  "host_cflags": "-idirafter /opt/homebrew/Cellar/zig/0.16.0_1/lib/zig/libc/include/generic-musl",
+  "config_usb_usbnet": "m",
+  "config_usb_net_cdcether": "m",
+  "config_modversions": "n",
+  "modules": {
+    "usbnet.ko": {"sha256": "bac2fea4ae9bafa1d9aaa8e16ee96b8a8fb44a04b80639a4fc36d4a0112fe6af", "vermagic": "4.9.191 SMP preempt mod_unload aarch64"},
+    "cdc_ether.ko": {"sha256": "890ef480d4fc8f7b657577467e9adf6ac0d2063af1e693eece5e1310df88222e", "vermagic": "4.9.191 SMP preempt mod_unload aarch64"}
+  }
+}
