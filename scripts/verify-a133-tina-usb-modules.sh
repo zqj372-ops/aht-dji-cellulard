@@ -2,6 +2,9 @@
 
 set -eu
 
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)
+. "$SCRIPT_DIR/aht-a133-tina-target-contract.sh"
+
 usage() {
   cat <<'EOF'
 Usage: [AHT_PACKAGE_DIR=/path/to/package] scripts/verify-a133-tina-usb-modules.sh [--static|--preflight|--load]
@@ -87,7 +90,7 @@ verify_module() {
 
 verify_static() {
   release=$(manifest_value target_kernel_release)
-  [ "$release" = "4.9.191" ] || fail 'kernel release mismatch'
+  [ "$release" = "$AHT_TARGET_KERNEL_RELEASE" ] || fail 'kernel release mismatch'
   [ "$(manifest_value arch)" = "arm64" ] || fail 'manifest architecture is not arm64'
   [ "$(manifest_value target_usb_vid)" = "2ca3" ] || fail 'target USB VID mismatch'
   [ "$(manifest_value target_usb_pid)" = "4006" ] || fail 'target USB PID mismatch'
@@ -144,10 +147,11 @@ for device in /sys/bus/usb/devices/*; do
     [ -d "$interface" ] || continue
     interface_class=$(cat "$interface/bInterfaceClass" 2>/dev/null || true)
     interface_subclass=$(cat "$interface/bInterfaceSubClass" 2>/dev/null || true)
-    if [ "$interface_class" = "02" ] && [ "$interface_subclass" = "06" ]; then
+    interface_protocol=$(cat "$interface/bInterfaceProtocol" 2>/dev/null || true)
+    if [ "$interface_class" = "02" ] && [ "$interface_subclass" = "06" ] && [ "$interface_protocol" = "00" ]; then
       control_count=$((control_count + 1))
     fi
-    if [ "$interface_class" = "0a" ] && [ "$interface_subclass" = "00" ]; then
+    if [ "$interface_class" = "0a" ] && [ "$interface_subclass" = "00" ] && [ "$interface_protocol" = "00" ]; then
       data_count=$((data_count + 1))
     fi
   done
@@ -162,6 +166,33 @@ else
 fi
 '
 
+KERNEL_COMPAT_PROBE='
+# AHT_KERNEL_COMPAT_CHECK
+case "$(uname -m 2>/dev/null)" in
+  aarch64|arm64) ;;
+  *) printf "%s\\n" KERNEL_COMPAT_NOT_READY; exit 0 ;;
+esac
+[ "$(uname -r 2>/dev/null)" = "4.9.191" ] || { printf "%s\\n" KERNEL_COMPAT_NOT_READY; exit 0; }
+[ -r /proc/config.gz ] || { printf "%s\\n" KERNEL_COMPAT_NOT_READY; exit 0; }
+if ! zcat /proc/config.gz 2>/dev/null | grep -q "^CONFIG_MODULES=y$"; then
+  printf "%s\\n" KERNEL_COMPAT_NOT_READY
+  exit 0
+fi
+if zcat /proc/config.gz 2>/dev/null | grep -q "^CONFIG_MODVERSIONS=y$"; then
+  printf "%s\\n" KERNEL_COMPAT_NOT_READY
+  exit 0
+fi
+if zcat /proc/config.gz 2>/dev/null | grep -Eq "^CONFIG_USB_USBNET=[ym]$|^CONFIG_USB_NET_CDCETHER=[ym]$"; then
+  printf "%s\\n" KERNEL_COMPAT_NOT_READY
+  exit 0
+fi
+if ! zcat /proc/config.gz 2>/dev/null | grep -q "^CONFIG_MODULES_USE_ELF_RELA=y$"; then
+  printf "%s\\n" KERNEL_COMPAT_NOT_READY
+  exit 0
+fi
+printf "%s\\n" KERNEL_COMPAT_READY
+'
+
 MODULE_STATE_PROBE='
 # AHT_MODULE_STATE
 [ -r /proc/modules ] || exit 1
@@ -169,6 +200,8 @@ usbnet_loaded=0
 cdc_ether_loaded=0
 if grep -q "^usbnet " /proc/modules; then usbnet_loaded=1; fi
 if grep -q "^cdc_ether " /proc/modules; then cdc_ether_loaded=1; fi
+if [ -d /sys/module/usbnet ] || [ -d /sys/bus/usb/drivers/usbnet ]; then usbnet_loaded=1; fi
+if [ -d /sys/module/cdc_ether ] || [ -d /sys/bus/usb/drivers/cdc_ether ]; then cdc_ether_loaded=1; fi
 if [ "$usbnet_loaded" -eq 0 ] && [ "$cdc_ether_loaded" -eq 0 ]; then
   printf "%s\\n" MODULES_ABSENT
 elif [ "$usbnet_loaded" -eq 1 ] && [ "$cdc_ether_loaded" -eq 0 ]; then
@@ -265,24 +298,28 @@ validate_device_gate() {
     fail 'device kernel release check failed'
   fi
   KERNEL_RELEASE=$(printf '%s\n' "$KERNEL_RELEASE_OUTPUT" | tr -d '\r\n')
-  [ "$KERNEL_RELEASE" = "4.9.191" ] || fail 'device kernel release mismatch'
+
+  if ! KERNEL_UNAME_OUTPUT=$(adb -s "$DEVICE_SERIAL" shell uname -a 2>/dev/null); then
+    fail 'device kernel build identity check failed'
+  fi
+  KERNEL_UNAME=$(printf '%s\n' "$KERNEL_UNAME_OUTPUT" | tr -d '\r\n')
+  if ! aht_validate_kernel_identity "$KERNEL_RELEASE" "$KERNEL_UNAME"; then
+    fail 'kernel build identity mismatch'
+  fi
 
   if ! OPENWRT_RELEASE_OUTPUT=$(adb -s "$DEVICE_SERIAL" shell 'cat /etc/openwrt_release' 2>/dev/null); then
     fail 'OpenWrt release identity check failed'
   fi
   OPENWRT_RELEASE=$(printf '%s\n' "$OPENWRT_RELEASE_OUTPUT" | tr -d '\r')
-  if ! printf '%s\n' "$OPENWRT_RELEASE" | awk -F= '
-    BEGIN { single=sprintf("%c", 39); double=sprintf("%c", 34) }
-    $1 == "DISTRIB_TARGET" {
-      value=$2
-      if (substr(value, 1, 1) == single || substr(value, 1, 1) == double) value=substr(value, 2)
-      if (substr(value, length(value), 1) == single || substr(value, length(value), 1) == double) value=substr(value, 1, length(value) - 1)
-      if (value == "a133-aw3/generic" || value == "a133-aw3/generic v1.0") found=1
-    }
-    END { exit(found ? 0 : 1) }
-  '; then
+  if ! aht_validate_openwrt_identity "$OPENWRT_RELEASE"; then
     fail 'OpenWrt target identity mismatch'
   fi
+
+  if ! KERNEL_COMPAT_OUTPUT=$(adb -s "$DEVICE_SERIAL" shell "$KERNEL_COMPAT_PROBE" 2>/dev/null); then
+    fail 'target kernel compatibility probe failed'
+  fi
+  KERNEL_COMPAT=$(printf '%s\n' "$KERNEL_COMPAT_OUTPUT" | tr -d '\r\n')
+  [ "$KERNEL_COMPAT" = "KERNEL_COMPAT_READY" ] || fail 'target kernel architecture or module configuration mismatch'
 
   if ! USB_IDENTITY_OUTPUT=$(adb -s "$DEVICE_SERIAL" shell "$USB_IDENTITY_PROBE" 2>/dev/null); then
     fail 'target USB identity probe failed'
@@ -394,11 +431,13 @@ if [ "$MODE" = "--preflight" ]; then
   exit 0
 fi
 
-REMOTE_DIR="/tmp/aht-dji-cellulard-driver.$$"
-MUTATION_STARTED=1
-if ! adb -s "$DEVICE_SERIAL" shell "mkdir -p '$REMOTE_DIR'" >/dev/null 2>&1; then
+REMOTE_DIR=
+REMOTE_DIR_CANDIDATE="/tmp/aht-dji-cellulard-driver.$$"
+if ! adb -s "$DEVICE_SERIAL" shell "mkdir '$REMOTE_DIR_CANDIDATE'" >/dev/null 2>&1; then
   fail 'remote temporary directory creation failed'
 fi
+REMOTE_DIR="$REMOTE_DIR_CANDIDATE"
+MUTATION_STARTED=1
 
 validate_device_gate
 require_module_state MODULES_ABSENT

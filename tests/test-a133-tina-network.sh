@@ -99,8 +99,25 @@ if [ "${1:-}" = "-s" ] && [ "${3:-}" = "shell" ]; then
   command=$*
   case "$command" in
     'id -u') printf '%s\n' '0' ;;
+    'uname -a')
+      if [ "${FAKE_TARGET_IDENTITY:-ok}" = "wrong-build" ]; then
+        printf '%s\n' 'Linux TinaLinux 4.9.191 #860 SMP PREEMPT Fri Jul 17 09:09:00 UTC 2026 aarch64 GNU/Linux'
+      else
+        printf '%s\n' 'Linux TinaLinux 4.9.191 #913 SMP PREEMPT Fri Jul 17 09:09:00 UTC 2026 aarch64 GNU/Linux'
+      fi
+      ;;
     'uname -r') printf '%s\n' '4.9.191' ;;
-    *'/etc/openwrt_release'*) printf '%s\n' "DISTRIB_TARGET='a133-aw3/generic v1.0'" ;;
+    *'/etc/openwrt_release'*)
+      if [ "${FAKE_TARGET_IDENTITY:-ok}" = "wrong-metadata" ]; then
+        printf '%s\n' "DISTRIB_ID='tina.raymanfeng.20260717.090727'"
+        printf '%s\n' "DISTRIB_REVISION='unverified-revision'"
+        printf '%s\n' "DISTRIB_TARGET='a133-aw3/generic v1.0'"
+      else
+        printf '%s\n' "DISTRIB_ID='tina.raymanfeng.20260717.090727'"
+        printf '%s\n' "DISTRIB_REVISION='5C1C9C53'"
+        printf '%s\n' "DISTRIB_TARGET='a133-aw3/generic v1.0'"
+      fi
+      ;;
     *'/sys/bus/usb/devices/'*)
       if [ "${FAKE_TARGET_MODE:-ready}" = "not-ready" ]; then
         printf '%s\n' 'TARGET_CDC_NETDEV_NOT_READY'
@@ -275,6 +292,42 @@ printf '%s\n' "$output" | grep '^state=degraded$' >/dev/null
 printf '%s\n' "$output" | grep '^reason=default_route_mismatch$' >/dev/null
 if grep 'ping -I' "$FAKE_LOG" >/dev/null; then
   printf '%s\n' 'FAIL: Gateway ping must not run when the default route uses another interface' >&2
+  exit 1
+fi
+
+: > "$FAKE_LOG"
+if output=$( \
+  PATH="$FAKE_BIN:$PATH" \
+  FAKE_ADB_LOG="$FAKE_LOG" \
+  FAKE_TARGET_IDENTITY=wrong-build \
+  AHT_CELLULAR_INTERFACE=cdc0 \
+  AHT_GATEWAY_HOST=gateway.example \
+  sh "$VERIFIER" --device 2>&1
+); then
+  printf '%s\n' 'FAIL: wrong kernel build was accepted by network verifier' >&2
+  exit 1
+fi
+printf '%s\n' "$output" | grep 'kernel build identity mismatch' >/dev/null
+if grep -E 'TARGET_CDC_NETDEV|ip -o|ping -I|udhcpc' "$FAKE_LOG" >/dev/null; then
+  printf '%s\n' 'FAIL: network verifier probed network state after kernel build mismatch' >&2
+  exit 1
+fi
+
+: > "$FAKE_LOG"
+if output=$( \
+  PATH="$FAKE_BIN:$PATH" \
+  FAKE_ADB_LOG="$FAKE_LOG" \
+  FAKE_TARGET_IDENTITY=wrong-metadata \
+  AHT_CELLULAR_INTERFACE=cdc0 \
+  AHT_GATEWAY_HOST=gateway.example \
+  sh "$VERIFIER" --device 2>&1
+); then
+  printf '%s\n' 'FAIL: unverified Tina distribution metadata was accepted by network verifier' >&2
+  exit 1
+fi
+printf '%s\n' "$output" | grep 'OpenWrt target identity mismatch' >/dev/null
+if grep -E 'TARGET_CDC_NETDEV|ip -o|ping -I|udhcpc' "$FAKE_LOG" >/dev/null; then
+  printf '%s\n' 'FAIL: network verifier probed network state after metadata mismatch' >&2
   exit 1
 fi
 

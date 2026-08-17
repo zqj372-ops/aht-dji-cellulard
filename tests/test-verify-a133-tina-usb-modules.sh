@@ -98,13 +98,31 @@ if [ "${1:-}" = "-s" ] && [ "${3:-}" = "shell" ]; then
     *'id -u'*)
       printf '%s\n' '0'
       ;;
+    *AHT_KERNEL_COMPAT_CHECK*)
+      printf '%s\n' 'KERNEL_COMPAT_READY'
+      ;;
+    *'uname -a'*)
+      if [ "$scenario" = "wrong-kernel-build" ]; then
+        printf '%s\n' 'Linux TinaLinux 4.9.191 #860 SMP PREEMPT Fri Jul 17 09:09:00 UTC 2026 aarch64 GNU/Linux'
+      else
+        printf '%s\n' 'Linux TinaLinux 4.9.191 #913 SMP PREEMPT Fri Jul 17 09:09:00 UTC 2026 aarch64 GNU/Linux'
+      fi
+      ;;
     *'uname -r'*)
       printf '%s\n' '4.9.191'
       ;;
     *openwrt_release*)
       if [ "$scenario" = "wrong-release" ]; then
+        printf '%s\n' "DISTRIB_ID='tina.raymanfeng.20260717.090727'"
+        printf '%s\n' "DISTRIB_REVISION='5C1C9C53'"
         printf '%s\n' "DISTRIB_TARGET='a133-other/generic v1.0'"
+      elif [ "$scenario" = "wrong-metadata" ]; then
+        printf '%s\n' "DISTRIB_ID='tina.raymanfeng.20260717.090727'"
+        printf '%s\n' "DISTRIB_REVISION='unverified-revision'"
+        printf '%s\n' "DISTRIB_TARGET='a133-aw3/generic v1.0'"
       else
+        printf '%s\n' "DISTRIB_ID='tina.raymanfeng.20260717.090727'"
+        printf '%s\n' "DISTRIB_REVISION='5C1C9C53'"
         printf '%s\n' "DISTRIB_TARGET='a133-aw3/generic v1.0'"
       fi
       ;;
@@ -151,7 +169,10 @@ if [ "${1:-}" = "-s" ] && [ "${3:-}" = "shell" ]; then
         set_state ''
       fi
       ;;
-    *'mkdir -p'*)
+    *'mkdir '*)
+      if [ "$scenario" = "dir-collision" ]; then
+        exit 1
+      fi
       ;;
     *'rm -f'*)
       ;;
@@ -227,6 +248,64 @@ printf '%s\n' "$output" | grep 'OpenWrt target identity mismatch' >/dev/null
 if grep -E '(^| )push( |$)|shell.*mkdir -p|shell.*insmod' "$RELEASE_LOG" >/dev/null 2>&1; then
   test_fail 'wrong OpenWrt target touched the device'
 fi
+
+BUILD_LOG="$TEST_ROOT/build-identity-adb.log"
+BUILD_STATE="$TEST_ROOT/build-identity-state"
+: > "$BUILD_STATE"
+if output=$( \
+  PATH="$FAKE_BIN:$PATH" \
+  FAKE_ADB_LOG="$BUILD_LOG" \
+  FAKE_ADB_STATE="$BUILD_STATE" \
+  FAKE_ADB_SCENARIO=wrong-kernel-build \
+  AHT_PACKAGE_DIR="$PACKAGE_DIR" \
+  AHT_ALLOW_DEVICE_MUTATION=1 \
+  sh "$VERIFIER" --load 2>&1
+); then
+  test_fail 'kernel build #860 was accepted for the #913 reference target'
+fi
+printf '%s\n' "$output" | grep 'kernel build identity mismatch' >/dev/null
+if grep -E '(^| )push( |$)|insmod|rmmod|rm -f|rmdir' "$BUILD_LOG" >/dev/null 2>&1; then
+  test_fail 'kernel build mismatch touched the device'
+fi
+
+METADATA_LOG="$TEST_ROOT/metadata-identity-adb.log"
+METADATA_STATE="$TEST_ROOT/metadata-identity-state"
+: > "$METADATA_STATE"
+if output=$( \
+  PATH="$FAKE_BIN:$PATH" \
+  FAKE_ADB_LOG="$METADATA_LOG" \
+  FAKE_ADB_STATE="$METADATA_STATE" \
+  FAKE_ADB_SCENARIO=wrong-metadata \
+  AHT_PACKAGE_DIR="$PACKAGE_DIR" \
+  AHT_ALLOW_DEVICE_MUTATION=1 \
+  sh "$VERIFIER" --load 2>&1
+); then
+  test_fail 'unverified Tina distribution metadata was accepted'
+fi
+printf '%s\n' "$output" | grep 'OpenWrt target identity mismatch' >/dev/null
+if grep -E '(^| )push( |$)|insmod|rmmod|rm -f|rmdir' "$METADATA_LOG" >/dev/null 2>&1; then
+  test_fail 'distribution metadata mismatch touched the device'
+fi
+
+COLLISION_LOG="$TEST_ROOT/collision-adb.log"
+COLLISION_STATE="$TEST_ROOT/collision-state"
+: > "$COLLISION_STATE"
+if output=$( \
+  PATH="$FAKE_BIN:$PATH" \
+  FAKE_ADB_LOG="$COLLISION_LOG" \
+  FAKE_ADB_STATE="$COLLISION_STATE" \
+  FAKE_ADB_SCENARIO=dir-collision \
+  AHT_PACKAGE_DIR="$PACKAGE_DIR" \
+  AHT_ALLOW_DEVICE_MUTATION=1 \
+  sh "$VERIFIER" --load 2>&1
+); then
+  test_fail 'remote temporary-directory collision was accepted'
+fi
+printf '%s\n' "$output" | grep 'remote temporary directory creation failed' >/dev/null
+if grep -E '(^| )push( |$)|insmod|rmmod|rm -f|rmdir' "$COLLISION_LOG" >/dev/null 2>&1; then
+  test_fail 'directory collision attempted module or cleanup mutation'
+fi
+[ -z "$(cat "$COLLISION_STATE")" ] || test_fail 'directory collision changed module state'
 
 SUCCESS_LOG="$TEST_ROOT/success-adb.log"
 SUCCESS_STATE="$TEST_ROOT/success-state"

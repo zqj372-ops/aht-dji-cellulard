@@ -2,6 +2,9 @@
 
 set -eu
 
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)
+. "$SCRIPT_DIR/aht-a133-tina-target-contract.sh"
+
 fail() {
   printf 'error: %s\n' "$1" >&2
   exit 1
@@ -170,19 +173,13 @@ DEVICE_SERIAL=$DEVICE_LIST
 ROOT_UID=$(adb -s "$DEVICE_SERIAL" shell id -u 2>/dev/null | tr -d '\r\n')
 [ "$ROOT_UID" = "0" ] || fail 'ADB target is not root'
 KERNEL_RELEASE=$(adb -s "$DEVICE_SERIAL" shell uname -r 2>/dev/null | tr -d '\r\n')
-[ "$KERNEL_RELEASE" = "4.9.191" ] || fail 'device kernel release mismatch'
+KERNEL_UNAME=$(adb -s "$DEVICE_SERIAL" shell uname -a 2>/dev/null | tr -d '\r\n')
+if ! aht_validate_kernel_identity "$KERNEL_RELEASE" "$KERNEL_UNAME"; then
+  fail 'kernel build identity mismatch'
+fi
 
 OPENWRT_RELEASE=$(adb -s "$DEVICE_SERIAL" shell 'cat /etc/openwrt_release' 2>/dev/null | tr -d '\r')
-if ! printf '%s\n' "$OPENWRT_RELEASE" | awk -F= '
-  BEGIN { single = sprintf("%c", 39); double = sprintf("%c", 34) }
-  $1 == "DISTRIB_TARGET" {
-    value = $2
-    if (substr(value, 1, 1) == single || substr(value, 1, 1) == double) value = substr(value, 2)
-    if (substr(value, length(value), 1) == single || substr(value, length(value), 1) == double) value = substr(value, 1, length(value) - 1)
-    if (value == "a133-aw3/generic" || value == "a133-aw3/generic v1.0") found = 1
-  }
-  END { exit(found ? 0 : 1) }
-'; then
+if ! aht_validate_openwrt_identity "$OPENWRT_RELEASE"; then
   fail 'OpenWrt target identity mismatch'
 fi
 

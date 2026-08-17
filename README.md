@@ -15,6 +15,7 @@ Phase 10 now provides a host-only builder and guarded verifiers:
 scripts/build-a133-tina-usb-modules.sh
 scripts/verify-a133-tina-usb-modules.sh
 scripts/verify-a133-tina-network.sh
+scripts/aht-a133-tina-target-contract.sh
 ```
 
 The builder requires explicit `AHT_KERNEL_TREE`, `AHT_TARGET_CONFIG`,
@@ -62,7 +63,12 @@ AHT_PACKAGE_DIR="$PWD/artifacts/a133-tina-reference-01" \
 ```
 
 The device gate has a separate read-only preflight that does not require the
-package or a mutation flag:
+package or a mutation flag. Both device verifiers source the same exact target
+contract: Tina Linux `4.9.191` build `#913`,
+`DISTRIB_ID=tina.raymanfeng.20260717.090727`,
+`DISTRIB_REVISION=5C1C9C53`, and
+`DISTRIB_TARGET=a133-aw3/generic v1.0`. A different kernel build, even with the
+same release number, is rejected before USB or network probes continue.
 
 ```sh
 sh scripts/verify-a133-tina-usb-modules.sh --preflight
@@ -80,9 +86,9 @@ The host test suite also exercises fake-ADB success/readback and reverse-order
 rollback after a simulated `cdc_ether` load failure. These tests validate the
 guard logic only and do not substitute for real target evidence.
 
-Both device verifiers require the exact A133 Tina target family
-(`a133-aw3/generic` or `a133-aw3/generic v1.0`) before they inspect or mutate
-the target. Network output is presence-only for addresses, routes, and DNS;
+Both device verifiers require the exact confirmed A133 Tina reference target
+contract before they inspect or mutate the target. Network output is
+presence-only for addresses, routes, and DNS;
 the real Gateway host is never echoed. A real `connected` result still
 requires target `cdc_ether` binding, a cellular address, a matching default
 route, DNS configuration, and a successful independent Gateway probe.
