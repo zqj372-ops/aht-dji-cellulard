@@ -101,6 +101,20 @@ Gateway 应把快照变化转换为带版本和事件游标的 Gateway event。�
 - driver 重启不会让 Gateway 把旧的 `connected` 状态当成当前事实。
 - 缺少证据时使用 `unknown`、`null` 或 `offline`，不猜测运营商、信号和 RTT。
 
+## 当前 BRICK 现场观测
+
+2026-08-17 通过 ADB 对已连接 BRICK 做了只读检查，观察到：
+
+- Linux `4.9.191`，架构 `aarch64`。
+- USB `VID:PID 2ca3:4006`，设备自报 `BAIWANG/Baiwang`。
+- 接口 `1-1:1.4` 为 CDC ECM control，`1-1:1.5` 为 CDC ECM data。
+- 没有绑定 `cdc_ether`/`usbnet`，也没有 `wwan`、`cdc-wdm`、`ttyUSB` 或 `ttyACM` 节点。
+- 内核 `CONFIG_USB_NET_DRIVERS=y`，但 `CONFIG_USB_USBNET` 未启用。
+
+因此当前设备快照必须是 `degraded`，不能标记为 `connected` 或 `4G`。`BAIWANG` 与 DJI Cellular 的产品关联仍需由硬件会话和模块资料确认；本仓库不根据厂商字符串猜测身份。
+
+要建立真实网络通路，后续需要提供启用了对应 USB network/CDC ECM 支持的 BRICK 内核，或明确选择用户态 USB 网络栈；这两者都不属于当前 Python 参考核心，也不会在没有确认的情况下写入设备。
+
 ## 本 PR 的边界
 
 本 PR 只提交仓库说明和跨进程集成契约，不宣称已经完成：

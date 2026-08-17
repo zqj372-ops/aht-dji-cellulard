@@ -33,3 +33,9 @@ PYTHONPATH=src python3 -m unittest discover -s tests -v
 ```
 
 The implementation lives in `src/aht_cellulard/snapshot.py`. It does not open hardware devices, send modem commands, persist credentials, or claim that the sample represents a live module.
+
+## Current BRICK observation
+
+On 2026-08-17, a read-only ADB inspection of the connected BRICK found a USB device with `VID:PID 2ca3:4006`, manufacturer/product `BAIWANG/Baiwang`, and CDC ECM control/data interfaces. No `cdc_ether`/`usbnet` driver was bound, and the device exposed no `wwan`, `cdc-wdm`, `ttyUSB`, or `ttyACM` node. The non-sensitive observation is recorded in [examples/brick-usb-observation.json](examples/brick-usb-observation.json).
+
+The BRICK kernel reports `CONFIG_USB_NET_DRIVERS=y` but `CONFIG_USB_USBNET` is not set. Therefore the current evidence is `degraded`, not live `4G`. A real network path needs a kernel build with the matching USB network support, or an explicitly selected userspace USB stack; this repository does not change the kernel or the connected device.
