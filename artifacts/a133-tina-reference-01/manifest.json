@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "target_kernel_release": "4.9.191",
+  "arch": "arm64",
+  "source_id": "linux-4.9.191-stable",
+  "source_archive_sha256": "ded4b87406deb67112b25a2283e8b5c89c2b47e2de14a97acda57f74cd38b7bc",
+  "config_sha256": "4594144ccfb0e023e3dae3ebb4bdedcea853e209f23a986e39b398bc503f4c65",
+  "compiler_machine": "aarch64-elf",
+  "toolchain_version": "aarch64-elf-gcc (GCC) 16.2.0",
+  "host_cflags": "-idirafter /opt/homebrew/Cellar/zig/0.16.0_1/lib/zig/libc/include/generic-musl",
+  "kernel_cflags": "-fdebug-prefix-map=<build-dir>=/usr/src/aht-build -fdebug-prefix-map=<kernel-tree>=/usr/src/linux-4.9.191",
+  "module_strip_flags": "--strip-debug --remove-section=.note.gnu.build-id",
+  "build_timestamp": "1970-01-01T00:00:00Z",
+  "build_user": "aht-builder",
+  "build_host": "aht-builder",
+  "target_usb_vid": "2ca3",
+  "target_usb_pid": "4006",
+  "cdc_ether_alias": "usb:v*p*d*dc*dsc*dp*ic02isc06ip00in*",
+  "config_usb_usbnet": "m",
+  "config_usb_net_cdcether": "m",
+  "config_modversions": "n",
+  "modules": {
+    "usbnet.ko": {"sha256": "a352404f6c1c2b90a8275b8d178e771d0d06c2a35813e98144c231015ef7056f", "vermagic": "4.9.191 SMP preempt mod_unload aarch64"},
+    "cdc_ether.ko": {"sha256": "8a2820f3f3ff0f9fa51072af3a76530340f8d7e38dc44ee02dceec0a179f59ee", "vermagic": "4.9.191 SMP preempt mod_unload aarch64"}
+  }
+}

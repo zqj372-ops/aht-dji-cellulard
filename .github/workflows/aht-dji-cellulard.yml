@@ -1,0 +1,36 @@
+name: AHT DJI Cellular host validation
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  host-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Run shell and package checks
+        shell: bash
+        run: |
+          set -eu
+          for script in scripts/*.sh; do
+            bash -n "$script"
+            sh -n "$script"
+          done
+          bash tests/test-collector-redaction.sh
+          bash tests/test-build-a133-tina-usb-modules.sh
+          sh tests/test-verify-a133-tina-usb-modules.sh
+          sh tests/test-a133-tina-network.sh
+          AHT_PACKAGE_DIR="$PWD/artifacts/a133-tina-reference-01" \
+            sh scripts/verify-a133-tina-usb-modules.sh --static
+          (cd artifacts/a133-tina-reference-01 && sha256sum -c SHA256SUMS)
+          if grep -R -n -E 'SerialNumber=[^<]|Serial Number:[[:space:]]*[^<]|target_serial=[^<]|androidboot\.serialno=[^<]' docs/verification/hardware; then
+            exit 1
+          fi
+          git diff --check
