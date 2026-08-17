@@ -103,4 +103,62 @@ usbnet_rollback_line=$(grep -n 'rmmod usbnet' "$FAKE_ADB_LOG" | cut -d: -f1 | he
 [ -n "$usbnet_rollback_line" ] || { printf '%s\n' 'FAIL: usbnet rollback was not attempted' >&2; exit 1; }
 [ "$cdc_rollback_line" -lt "$usbnet_rollback_line" ] || { printf '%s\n' 'FAIL: rollback order was not reverse dependency order' >&2; exit 1; }
 
+SUCCESS_BIN="$TEST_ROOT/success-bin"
+SUCCESS_ADB_LOG="$TEST_ROOT/success-adb.log"
+mkdir -p "$SUCCESS_BIN"
+cat > "$SUCCESS_BIN/adb" <<'EOF'
+#!/bin/sh
+
+printf '%s\n' "$*" >> "$SUCCESS_ADB_LOG"
+
+if [ "${1:-}" = "devices" ]; then
+  printf '%s\n' 'List of devices attached'
+  printf '%s\t%s\n' 'fixture-device' 'device'
+  exit 0
+fi
+
+if [ "${1:-}" = "-s" ] && [ "${3:-}" = "push" ]; then
+  exit 0
+fi
+
+if [ "${1:-}" = "-s" ] && [ "${3:-}" = "shell" ]; then
+  command=${4:-}
+  if [ "$#" -ge 5 ]; then
+    command="$command $5"
+  fi
+  case "$command" in
+    'id -u') printf '%s\n' '0' ;;
+    'uname -r') printf '%s\n' '4.9.191' ;;
+    'grep -E "^(usbnet|cdc_ether) " /proc/modules') exit 1 ;;
+    mkdir\ -p\ * ) exit 0 ;;
+    *insmod* ) exit 0 ;;
+    'grep -q "^usbnet " /proc/modules && grep -q "^cdc_ether " /proc/modules') exit 0 ;;
+    *found=1* ) exit 0 ;;
+    *cat\ /proc/net/dev* ) printf '%s\n' 'Inter-| Receive | Transmit' ;;
+    *) exit 0 ;;
+  esac
+  exit 0
+fi
+
+exit 1
+EOF
+chmod +x "$SUCCESS_BIN/adb"
+
+if ! output=$(
+  PATH="$SUCCESS_BIN:$PATH" \
+  SUCCESS_ADB_LOG="$SUCCESS_ADB_LOG" \
+  AHT_PACKAGE_DIR="$PACKAGE_DIR" \
+  AHT_ALLOW_DEVICE_MUTATION=1 \
+  bash "$VERIFIER" --load 2>&1
+); then
+  printf '%s\n' 'FAIL: simulated successful module load should pass the gate' >&2
+  printf '%s\n' "$output" >&2
+  exit 1
+fi
+printf '%s\n' "$output" | grep 'PASS: modules loaded and CDC-ECM binding read back' >/dev/null
+if grep -q 'rmmod ' "$SUCCESS_ADB_LOG"; then
+  printf '%s\n' 'FAIL: successful module load unexpectedly attempted rollback' >&2
+  exit 1
+fi
+
 printf '%s\n' 'PASS: verifier rejects unsafe and incompatible packages'

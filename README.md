@@ -64,6 +64,10 @@ separate; DHCP requires `AHT_ALLOW_NETWORK_MUTATION=1`, and the state is only
 `connected` when the cellular interface, address, default route, and an
 independent Gateway probe are all present.
 
+The host test suite also exercises fake-ADB success/readback and reverse-order
+rollback after a simulated `cdc_ether` load failure. These tests validate the
+guard logic only and do not substitute for real target evidence.
+
 Run the host checks with:
 
 ```sh
