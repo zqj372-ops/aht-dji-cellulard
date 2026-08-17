@@ -124,6 +124,11 @@ SOURCE_ID=${AHT_KERNEL_SOURCE_ID:-"linux-$KERNEL_RELEASE"}
 SOURCE_ARCHIVE_SHA256=${AHT_KERNEL_SOURCE_SHA256:-unrecorded}
 USBNET_VERMAGIC=$($READELF -p .modinfo "$USBNET_MODULE" | sed -n 's/.*vermagic=//p' | head -n 1)
 CDC_ETHER_VERMAGIC=$($READELF -p .modinfo "$CDC_ETHER_MODULE" | sed -n 's/.*vermagic=//p' | head -n 1)
+CDC_ETHER_ALIAS=$(strings "$CDC_ETHER_MODULE" | sed -n 's/^alias=//p' | grep 'ic02isc06ip00in' | head -n 1)
+case "$CDC_ETHER_ALIAS" in
+  *ic02isc06ip00in*) ;;
+  *) fail 'cdc_ether.ko has no generic CDC-ECM control-interface alias' ;;
+esac
 
 cp "$USBNET_MODULE" "$OUTPUT_DIR/usbnet.ko"
 cp "$CDC_ETHER_MODULE" "$OUTPUT_DIR/cdc_ether.ko"
@@ -139,6 +144,9 @@ cp "$CDC_ETHER_MODULE" "$OUTPUT_DIR/cdc_ether.ko"
   printf '  "compiler_machine": "%s",\n' "$COMPILER_MACHINE"
   printf '  "toolchain_version": "%s",\n' "$(json_escape "$TOOLCHAIN_VERSION")"
   printf '  "host_cflags": "%s",\n' "$(json_escape "$HOST_CFLAGS")"
+  printf '  "target_usb_vid": "2ca3",\n'
+  printf '  "target_usb_pid": "4006",\n'
+  printf '  "cdc_ether_alias": "%s",\n' "$(json_escape "$CDC_ETHER_ALIAS")"
   printf '  "config_usb_usbnet": "m",\n'
   printf '  "config_usb_net_cdcether": "m",\n'
   printf '  "config_modversions": "n",\n'

@@ -8,11 +8,14 @@
   "compiler_machine": "aarch64-elf",
   "toolchain_version": "aarch64-elf-gcc (GCC) 16.2.0",
   "host_cflags": "-idirafter /opt/homebrew/Cellar/zig/0.16.0_1/lib/zig/libc/include/generic-musl",
+  "target_usb_vid": "2ca3",
+  "target_usb_pid": "4006",
+  "cdc_ether_alias": "usb:v*p*d*dc*dsc*dp*ic02isc06ip00in*",
   "config_usb_usbnet": "m",
   "config_usb_net_cdcether": "m",
   "config_modversions": "n",
   "modules": {
-    "usbnet.ko": {"sha256": "bac2fea4ae9bafa1d9aaa8e16ee96b8a8fb44a04b80639a4fc36d4a0112fe6af", "vermagic": "4.9.191 SMP preempt mod_unload aarch64"},
-    "cdc_ether.ko": {"sha256": "890ef480d4fc8f7b657577467e9adf6ac0d2063af1e693eece5e1310df88222e", "vermagic": "4.9.191 SMP preempt mod_unload aarch64"}
+    "usbnet.ko": {"sha256": "3f892d472e99e21ee7d0de89c45b85f75e4a42ab75c9c5f6a7572538f30d7709", "vermagic": "4.9.191 SMP preempt mod_unload aarch64"},
+    "cdc_ether.ko": {"sha256": "805a378904b2daa17c26f7722f694f15ee2ce36010686962612708c048d35ce8", "vermagic": "4.9.191 SMP preempt mod_unload aarch64"}
   }
 }

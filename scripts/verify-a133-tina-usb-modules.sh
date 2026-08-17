@@ -89,11 +89,21 @@ verify_static() {
   release=$(manifest_value target_kernel_release)
   [ "$release" = "4.9.191" ] || fail 'kernel release mismatch'
   [ "$(manifest_value arch)" = "arm64" ] || fail 'manifest architecture is not arm64'
+  [ "$(manifest_value target_usb_vid)" = "2ca3" ] || fail 'target USB VID mismatch'
+  [ "$(manifest_value target_usb_pid)" = "4006" ] || fail 'target USB PID mismatch'
   [ "$(manifest_value config_usb_usbnet)" = "m" ] || fail 'CONFIG_USB_USBNET is not a module'
   [ "$(manifest_value config_usb_net_cdcether)" = "m" ] || fail 'CONFIG_USB_NET_CDCETHER is not a module'
   [ "$(manifest_value config_modversions)" = "n" ] || fail 'CONFIG_MODVERSIONS must be disabled'
   verify_module usbnet.ko
   verify_module cdc_ether.ko
+  cdc_alias=$(manifest_value cdc_ether_alias)
+  case "$cdc_alias" in
+    *ic02isc06ip00in*) ;;
+    *) fail 'manifest CDC-ECM alias is missing' ;;
+  esac
+  cdc_strings=$(strings "$PACKAGE_DIR/cdc_ether.ko" 2>/dev/null || true)
+  printf '%s\n' "$cdc_strings" | grep -F "alias=$cdc_alias" >/dev/null || fail 'cdc_ether.ko CDC-ECM alias mismatch'
+  printf '%s\n' "$cdc_strings" | grep '^depends=usbnet$' >/dev/null || fail 'cdc_ether.ko dependency on usbnet is missing'
   printf 'PASS: static package verification (%s)\n' "$PACKAGE_DIR"
 }
 

@@ -30,6 +30,9 @@ cat > "$PACKAGE_DIR/manifest.json" <<'EOF'
   "schema_version": 1,
   "target_kernel_release": "4.9.191",
   "arch": "arm64",
+  "target_usb_vid": "2ca3",
+  "target_usb_pid": "4006",
+  "cdc_ether_alias": "usb:v*p*d*dc*dsc*dp*ic02isc06ip00in*",
   "config_usb_usbnet": "m",
   "config_usb_net_cdcether": "m",
   "config_modversions": "n",
@@ -53,6 +56,16 @@ fi
 printf '%s\n' "$output" | grep 'kernel release mismatch' >/dev/null
 
 PACKAGE_DIR="$SCRIPT_DIR/../artifacts/a133-tina-reference-01"
+ALIAS_PACKAGE="$TEST_ROOT/alias-package"
+mkdir -p "$ALIAS_PACKAGE"
+cp "$PACKAGE_DIR/usbnet.ko" "$PACKAGE_DIR/cdc_ether.ko" "$ALIAS_PACKAGE/"
+sed 's/"cdc_ether_alias": "[^"]*"/"cdc_ether_alias": "wrong-alias"/' \
+  "$PACKAGE_DIR/manifest.json" > "$ALIAS_PACKAGE/manifest.json"
+if output=$(AHT_PACKAGE_DIR="$ALIAS_PACKAGE" sh "$VERIFIER" --static 2>&1); then
+  test_fail 'wrong CDC-ECM alias was accepted'
+fi
+printf '%s\n' "$output" | grep 'manifest CDC-ECM alias is missing' >/dev/null
+
 FAKE_BIN="$TEST_ROOT/bin"
 mkdir -p "$FAKE_BIN"
 cat > "$FAKE_BIN/adb" <<'EOF'
