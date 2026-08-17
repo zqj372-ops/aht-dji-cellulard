@@ -41,6 +41,7 @@ KERNEL_RELEASE=$(make -s -C "$KERNEL_TREE" kernelversion 2>/dev/null || true)
 [ -n "$CROSS_COMPILE" ] || fail 'AHT_CROSS_COMPILE must name a cross compiler prefix'
 CC="${CROSS_COMPILE}gcc"
 READELF="${AHT_READELF:-${CROSS_COMPILE}readelf}"
+STRIP="${AHT_STRIP:-${CROSS_COMPILE}strip}"
 command -v "$CC" >/dev/null 2>&1 || fail "cross compiler executable is missing: $CC"
 command -v "$READELF" >/dev/null 2>&1 || fail "ELF reader executable is missing: $READELF"
 
@@ -49,6 +50,7 @@ case "$COMPILER_MACHINE" in
   aarch64*) ;;
   *) fail "cross compiler must target AArch64; got $COMPILER_MACHINE" ;;
 esac
+command -v "$STRIP" >/dev/null 2>&1 || fail "ELF strip executable is missing: $STRIP"
 
 [ -n "$OUTPUT_DIR" ] || fail 'AHT_OUTPUT_DIR is required'
 if [ -e "$OUTPUT_DIR" ]; then
@@ -67,11 +69,20 @@ else
 fi
 
 HOST_CFLAGS=${AHT_HOST_CFLAGS:-}
+BUILD_TIMESTAMP=${AHT_BUILD_TIMESTAMP:-1970-01-01T00:00:00Z}
+BUILD_USER=${AHT_BUILD_USER:-aht-builder}
+BUILD_HOST=${AHT_BUILD_HOST:-aht-builder}
+KERNEL_CFLAGS="-fdebug-prefix-map=$BUILD_DIR=/usr/src/aht-build -fdebug-prefix-map=$KERNEL_TREE=/usr/src/linux-4.9.191${AHT_KCFLAGS:+ $AHT_KCFLAGS}"
+KERNEL_CFLAGS_RECORD="-fdebug-prefix-map=<build-dir>=/usr/src/aht-build -fdebug-prefix-map=<kernel-tree>=/usr/src/linux-4.9.191${AHT_KCFLAGS:+ $AHT_KCFLAGS}"
 kernel_make() {
   if [ -n "$HOST_CFLAGS" ]; then
-    make -C "$KERNEL_TREE" O="$BUILD_DIR" ARCH=arm64 CROSS_COMPILE="$CROSS_COMPILE" HOSTCFLAGS="$HOST_CFLAGS" "$@"
+    make -C "$KERNEL_TREE" O="$BUILD_DIR" ARCH=arm64 CROSS_COMPILE="$CROSS_COMPILE" \
+      HOSTCFLAGS="$HOST_CFLAGS" KCFLAGS="$KERNEL_CFLAGS" \
+      KBUILD_BUILD_TIMESTAMP="$BUILD_TIMESTAMP" KBUILD_BUILD_USER="$BUILD_USER" KBUILD_BUILD_HOST="$BUILD_HOST" "$@"
   else
-    make -C "$KERNEL_TREE" O="$BUILD_DIR" ARCH=arm64 CROSS_COMPILE="$CROSS_COMPILE" "$@"
+    make -C "$KERNEL_TREE" O="$BUILD_DIR" ARCH=arm64 CROSS_COMPILE="$CROSS_COMPILE" \
+      KCFLAGS="$KERNEL_CFLAGS" \
+      KBUILD_BUILD_TIMESTAMP="$BUILD_TIMESTAMP" KBUILD_BUILD_USER="$BUILD_USER" KBUILD_BUILD_HOST="$BUILD_HOST" "$@"
   fi
 }
 
@@ -94,6 +105,13 @@ USBNET_MODULE=$(find_module usbnet.ko)
 CDC_ETHER_MODULE=$(find_module cdc_ether.ko)
 [ -n "$USBNET_MODULE" ] || fail 'build did not produce usbnet.ko'
 [ -n "$CDC_ETHER_MODULE" ] || fail 'build did not produce cdc_ether.ko'
+
+# The old 4.9 build emits a temporary O= path in DWARF and a link-time build-id.
+# Remove both from the distributable modules so two clean builds have identical
+# payloads while retaining .modinfo, symbols needed by relocations, and module
+# relocation sections required by the kernel loader.
+MODULE_STRIP_FLAGS='--strip-debug --remove-section=.note.gnu.build-id'
+$STRIP $MODULE_STRIP_FLAGS "$USBNET_MODULE" "$CDC_ETHER_MODULE"
 
 case "$($READELF -h "$USBNET_MODULE")" in
   *AArch64*) ;;
@@ -144,6 +162,11 @@ cp "$CDC_ETHER_MODULE" "$OUTPUT_DIR/cdc_ether.ko"
   printf '  "compiler_machine": "%s",\n' "$COMPILER_MACHINE"
   printf '  "toolchain_version": "%s",\n' "$(json_escape "$TOOLCHAIN_VERSION")"
   printf '  "host_cflags": "%s",\n' "$(json_escape "$HOST_CFLAGS")"
+  printf '  "kernel_cflags": "%s",\n' "$(json_escape "$KERNEL_CFLAGS_RECORD")"
+  printf '  "module_strip_flags": "%s",\n' "$(json_escape "$MODULE_STRIP_FLAGS")"
+  printf '  "build_timestamp": "%s",\n' "$(json_escape "$BUILD_TIMESTAMP")"
+  printf '  "build_user": "%s",\n' "$(json_escape "$BUILD_USER")"
+  printf '  "build_host": "%s",\n' "$(json_escape "$BUILD_HOST")"
   printf '  "target_usb_vid": "2ca3",\n'
   printf '  "target_usb_pid": "4006",\n'
   printf '  "cdc_ether_alias": "%s",\n' "$(json_escape "$CDC_ETHER_ALIAS")"
