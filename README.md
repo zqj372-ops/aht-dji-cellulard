@@ -20,4 +20,16 @@ Gateway
 AHT client
 ```
 
-The repository is currently at the contract/scaffolding stage. Driver implementation, hardware probing, and modem-specific command handling will be added in subsequent pull requests.
+The repository currently includes a dependency-free Python reference core for snapshot validation and Gateway mapping. It is not the hardware driver: USB/serial probing, AT commands, SIM/PDP control, and modem-specific behavior will be added only after the module interface is verified.
+
+## Reference core
+
+The reference core accepts the JSON shape in [examples/connected-snapshot.json](examples/connected-snapshot.json), rejects invalid or contradictory states, and maps only independently-probed Gateway reachability to `link: "4G"`.
+
+Run the tests with the standard library only:
+
+```bash
+PYTHONPATH=src python3 -m unittest discover -s tests -v
+```
+
+The implementation lives in `src/aht_cellulard/snapshot.py`. It does not open hardware devices, send modem commands, persist credentials, or claim that the sample represents a live module.

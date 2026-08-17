@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "modem_id": "dji-cellular-0",
+  "state": "connected",
+  "transport": "usb",
+  "rat": "4g",
+  "operator": "example-carrier",
+  "sim": "ready",
+  "signal": {
+    "dbm": -78,
+    "level": 4
+  },
+  "data": {
+    "pdp": "active",
+    "interface": "wwan0",
+    "ipv4": true,
+    "ipv6": false
+  },
+  "rtt_ms": 38,
+  "updated_at": "2026-08-17T12:00:00Z",
+  "error": null
+}
