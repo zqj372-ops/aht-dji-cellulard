@@ -6,12 +6,17 @@ import {
 } from '../../src/providers/trust';
 
 const snapshot: GatewaySnapshot = {
+  source: 'gateway',
   schema_version: 1,
   revision: 4,
   event_id: 'evt-4',
   generated_at: '1970-01-01T00:01:40.000Z',
+  tenant_id: 'tenant-01',
+  principal_id: 'user-01',
+  device_id: 'device-01',
   permission_scope: ['needs_you:read', 'needs_you:write'],
   agents: [],
+  sessions: [],
   needs_you: [],
   servers: [],
   network: null,

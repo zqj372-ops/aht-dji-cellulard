@@ -14,6 +14,8 @@ function getLabel({ source, connection, stale, error }: ConnectionStatusProps): 
   if (connection === 'connecting') return 'Gateway · 正在连接';
   if (connection === 'reconnecting') return 'Gateway · 重连中';
   if (connection === 'disconnected') return 'Gateway · 已断开';
+  if (connection === 'pairing_required') return 'Gateway · 需要配对';
+  if (connection === 'unauthorized') return 'Gateway · 未授权';
   if (error) return 'Gateway · 不可用';
   return 'Gateway · 等待数据';
 }

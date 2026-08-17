@@ -22,9 +22,23 @@ export class FixtureProvider implements AhtProvider {
   }
 
   async decide(command: DecisionCommand): Promise<CommandAck> {
+    const commandId = `fixture-${command.itemId}`;
+    this.emit({ type: 'command_lifecycle', lifecycle: {
+      commandId, itemId: command.itemId, phase: 'sending', reason: null, sourceEventId: 'fixture', finalEventId: null,
+    } });
     this.snapshot = decideInboxItem(this.snapshot, command.itemId, command.decision);
     this.emit({ type: 'snapshot', snapshot: this.snapshot, snapshotTrust: createFixtureSnapshotTrust(new Date()) });
-    const ack = { commandId: `fixture-${command.itemId}`, status: 'accepted' as const };
+    const ack = {
+      commandId,
+      status: 'accepted' as const,
+      phase: 'final' as const,
+      reason: null,
+      finalEventId: 'fixture',
+      retryable: false,
+    };
+    this.emit({ type: 'command_lifecycle', lifecycle: {
+      commandId, itemId: command.itemId, phase: 'confirmed', reason: null, sourceEventId: 'fixture', finalEventId: 'fixture',
+    } });
     this.emit({ type: 'command_ack', ack });
     return ack;
   }

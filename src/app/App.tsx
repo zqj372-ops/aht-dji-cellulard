@@ -44,6 +44,7 @@ export function App() {
       onDecision={decide}
       onBack={() => setSelectedInboxId(null)}
       decisionGate={runtime.decisionGate}
+      decisionLifecycle={selectedInboxId ? runtime.decisionLifecycle[selectedInboxId] ?? null : null}
     />
   ) : currentScreen === 'needs' ? (
     <NeedsYouScreen inbox={state.inbox} agents={state.agents} onOpen={openInboxItem} />

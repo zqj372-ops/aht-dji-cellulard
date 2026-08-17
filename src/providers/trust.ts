@@ -72,6 +72,9 @@ export function getDecisionGate(
   trust: SnapshotTrust,
 ): DecisionGate {
   if (source === 'fixture') return { allowed: true, reason: null };
+  if (connection === 'pairing_required' || connection === 'unauthorized') {
+    return { allowed: false, reason: 'gateway_not_authorized' };
+  }
   if (connection !== 'connected') return { allowed: false, reason: 'gateway_not_connected' };
   if (trust.freshness === 'unknown') return { allowed: false, reason: 'gateway_snapshot_unavailable' };
   if (trust.freshness === 'stale') return { allowed: false, reason: 'gateway_snapshot_stale' };
@@ -83,6 +86,8 @@ export function getDecisionGate(
 
 export function decisionGateMessage(reason: DecisionGateReason): string {
   switch (reason) {
+    case 'gateway_not_authorized':
+      return '当前 Gateway 会话未授权，远程决策已锁定。';
     case 'gateway_not_connected':
       return 'Gateway 未连接，远程决策已锁定。请恢复连接后重试。';
     case 'gateway_snapshot_unavailable':

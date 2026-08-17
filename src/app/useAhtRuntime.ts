@@ -16,12 +16,23 @@ import type {
   DataSource,
   DecisionCommand,
   DecisionGate,
+  DecisionLifecycle,
+  ProviderAuthorization,
   SnapshotTrust,
 } from '../providers/types';
 import type { FixtureState } from './types';
 
 const configuredSource: DataSource = import.meta.env.VITE_AHT_DATA_SOURCE === 'gateway' ? 'gateway' : 'fixture';
 const gatewayUrl = import.meta.env.VITE_AHT_GATEWAY_URL ?? '';
+const gatewayDeviceId = import.meta.env.VITE_AHT_DEVICE_ID ?? 'device-01';
+const defaultGatewayProviderFactory = () => new GatewayProvider({ url: gatewayUrl, deviceId: gatewayDeviceId });
+const defaultFixtureProviderFactory = () => new FixtureProvider();
+
+export interface AhtRuntimeOptions {
+  initialSource?: DataSource;
+  gatewayProviderFactory?: () => AhtProvider;
+  fixtureProviderFactory?: () => AhtProvider;
+}
 
 export interface AhtRuntime {
   source: DataSource;
@@ -31,26 +42,39 @@ export interface AhtRuntime {
   error: string | null;
   snapshotTrust: SnapshotTrust;
   decisionGate: DecisionGate;
+  authorization: ProviderAuthorization;
+  decisionLifecycle: Record<string, DecisionLifecycle>;
   setSource: (source: DataSource) => void;
   decide: (command: DecisionCommand) => Promise<CommandAck>;
 }
 
-export function useAhtRuntime(): AhtRuntime {
-  const [source, setSource] = useState<DataSource>(configuredSource);
-  const [state, setState] = useState<FixtureState>(configuredSource === 'fixture' ? fixtureState : emptyState);
+export function useAhtRuntime(options: AhtRuntimeOptions = {}): AhtRuntime {
+  const initialSource = options.initialSource ?? configuredSource;
+  const gatewayProviderFactory = options.gatewayProviderFactory ?? defaultGatewayProviderFactory;
+  const fixtureProviderFactory = options.fixtureProviderFactory ?? defaultFixtureProviderFactory;
+  const [source, setSource] = useState<DataSource>(initialSource);
+  const [state, setState] = useState<FixtureState>(initialSource === 'fixture' ? fixtureState : emptyState);
   const [connection, setConnection] = useState<ConnectionState>('idle');
   const [stale, setStale] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [snapshotTrust, setSnapshotTrust] = useState<SnapshotTrust>(
-    configuredSource === 'fixture'
+    initialSource === 'fixture'
       ? createFixtureSnapshotTrust(new Date())
       : createUnknownGatewaySnapshotTrust(),
   );
+  const [authorization, setAuthorization] = useState<ProviderAuthorization>({
+    status: initialSource === 'fixture' ? 'authorized' : 'unauthorized',
+    sessionId: initialSource === 'fixture' ? 'fixture-session' : null,
+    principalId: initialSource === 'fixture' ? 'fixture-user' : null,
+    tenantId: initialSource === 'fixture' ? 'fixture-tenant' : null,
+    deviceId: gatewayDeviceId,
+    permissionScope: initialSource === 'fixture' ? ['development:fixture', 'needs_you:write'] : [],
+    reason: null,
+  });
+  const [decisionLifecycle, setDecisionLifecycle] = useState<Record<string, DecisionLifecycle>>({});
   const provider = useMemo<AhtProvider>(
-    () => source === 'fixture'
-      ? new FixtureProvider()
-      : new GatewayProvider({ url: gatewayUrl }),
-    [source],
+    () => source === 'fixture' ? fixtureProviderFactory() : gatewayProviderFactory(),
+    [fixtureProviderFactory, gatewayProviderFactory, source],
   );
 
   useEffect(() => {
@@ -58,6 +82,16 @@ export function useAhtRuntime(): AhtRuntime {
     setConnection('idle');
     setStale(false);
     setError(null);
+    setDecisionLifecycle({});
+    setAuthorization({
+      status: source === 'fixture' ? 'authorized' : 'unauthorized',
+      sessionId: source === 'fixture' ? 'fixture-session' : null,
+      principalId: source === 'fixture' ? 'fixture-user' : null,
+      tenantId: source === 'fixture' ? 'fixture-tenant' : null,
+      deviceId: gatewayDeviceId,
+      permissionScope: source === 'fixture' ? ['development:fixture', 'needs_you:write'] : [],
+      reason: null,
+    });
     setSnapshotTrust(
       source === 'fixture'
         ? createFixtureSnapshotTrust(new Date())
@@ -68,9 +102,22 @@ export function useAhtRuntime(): AhtRuntime {
         setConnection(event.state);
         setStale(source === 'gateway' && event.state !== 'connected');
         if (source === 'gateway' && event.state !== 'connected') {
+          setDecisionLifecycle((current) => Object.fromEntries(
+            Object.entries(current).map(([itemId, lifecycle]) => (
+              lifecycle.phase === 'gateway_accepted' || lifecycle.phase === 'waiting_final_event'
+                ? [itemId, { ...lifecycle, phase: 'result_pending', reason: event.reason ?? event.state }]
+                : [itemId, lifecycle]
+            )),
+          ));
+        }
+        if (source === 'gateway' && event.state !== 'connected') {
           setSnapshotTrust((current) => markSnapshotTrustStale(current, event.reason ?? event.state));
         }
         if (event.state === 'connected') setError(null);
+        return;
+      }
+      if (event.type === 'authorization') {
+        setAuthorization(event.authorization);
         return;
       }
       if (event.type === 'snapshot') {
@@ -78,6 +125,31 @@ export function useAhtRuntime(): AhtRuntime {
         setSnapshotTrust(event.snapshotTrust);
         setStale(event.snapshotTrust.freshness !== 'fresh');
         setError(null);
+        return;
+      }
+      if (event.type === 'command_lifecycle') {
+        setDecisionLifecycle((current) => ({
+          ...current,
+          [event.lifecycle.itemId]: event.lifecycle,
+        }));
+        return;
+      }
+      if (event.type === 'command_ack') {
+        if (event.ack.status === 'rejected') {
+          setDecisionLifecycle((current) => {
+            const item = Object.values(current).find((lifecycle) => lifecycle.commandId === event.ack.commandId);
+            if (!item) return current;
+            return {
+              ...current,
+              [item.itemId]: {
+                ...item,
+                phase: 'rejected',
+                reason: event.ack.reason,
+                finalEventId: event.ack.finalEventId,
+              },
+            };
+          });
+        }
         return;
       }
       if (event.type === 'error') {
@@ -101,5 +173,7 @@ export function useAhtRuntime(): AhtRuntime {
     () => getDecisionGate(source, connection, snapshotTrust),
     [connection, snapshotTrust, source],
   );
-  return { source, connection, state, stale, error, snapshotTrust, decisionGate, setSource, decide };
+  return {
+    source, connection, state, stale, error, snapshotTrust, decisionGate, authorization, decisionLifecycle, setSource, decide,
+  };
 }

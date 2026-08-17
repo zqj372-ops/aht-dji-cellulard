@@ -7,6 +7,8 @@ export type ConnectionState =
   | 'connected'
   | 'reconnecting'
   | 'disconnected'
+  | 'pairing_required'
+  | 'unauthorized'
   | 'error';
 
 export type SnapshotFreshness = 'fresh' | 'stale' | 'unknown';
@@ -24,6 +26,7 @@ export interface SnapshotTrust {
 
 export type DecisionGateReason =
   | 'gateway_not_connected'
+  | 'gateway_not_authorized'
   | 'gateway_snapshot_unavailable'
   | 'gateway_snapshot_stale'
   | 'permission_denied';
@@ -42,13 +45,48 @@ export interface DecisionCommand {
 export interface CommandAck {
   commandId: string;
   status: 'accepted' | 'rejected' | 'duplicate';
-  reason?: string;
+  phase: 'pending_event' | 'final' | 'not_applicable';
+  reason: string | null;
+  finalEventId: string | null;
+  retryable: boolean;
+}
+
+export type AuthorizationState = 'authorized' | 'pairing_required' | 'unauthorized';
+
+export interface ProviderAuthorization {
+  status: AuthorizationState;
+  sessionId: string | null;
+  principalId: string | null;
+  tenantId: string | null;
+  deviceId: string;
+  permissionScope: string[];
+  reason: string | null;
+}
+
+export type DecisionLifecyclePhase =
+  | 'sending'
+  | 'gateway_accepted'
+  | 'waiting_final_event'
+  | 'confirmed'
+  | 'rejected'
+  | 'failed'
+  | 'result_pending';
+
+export interface DecisionLifecycle {
+  commandId: string;
+  itemId: string;
+  phase: DecisionLifecyclePhase;
+  reason: string | null;
+  sourceEventId: string | null;
+  finalEventId: string | null;
 }
 
 export type ProviderEvent =
   | { type: 'connection'; state: ConnectionState; reason?: string }
+  | { type: 'authorization'; authorization: ProviderAuthorization }
   | { type: 'snapshot'; snapshot: FixtureState; snapshotTrust: SnapshotTrust; eventId?: string; stale?: boolean }
   | { type: 'command_ack'; ack: CommandAck }
+  | { type: 'command_lifecycle'; lifecycle: DecisionLifecycle }
   | { type: 'error'; code: string; message: string; retryable: boolean };
 
 export interface AhtProvider {
