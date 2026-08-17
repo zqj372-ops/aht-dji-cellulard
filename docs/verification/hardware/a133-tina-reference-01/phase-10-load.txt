@@ -25,4 +25,4 @@ module_lifecycle=retained
 remote_module_files=removed
 network_configuration=unchanged
 reason=target_identity_cdc_ecm_binding_and_netdev_verified
-next_gate=record_real_network_acceptance
+next_gate=acceptance_complete

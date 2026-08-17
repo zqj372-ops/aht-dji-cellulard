@@ -23,4 +23,4 @@ route_change_attempted=via_dhcp_client
 credentials_or_sim_identifiers_stored=no
 reason=cdc_ecm_address_route_dns_and_gateway_verified
 fixture_verifier_status=passed
-next_gate=retain_modules_and_update_pr
+next_gate=acceptance_complete

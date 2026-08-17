@@ -76,11 +76,12 @@ same release number, is rejected before USB or network probes continue.
 sh scripts/verify-a133-tina-usb-modules.sh --preflight
 ```
 
-Device loading is guarded and temporary. It requires
-`AHT_ALLOW_DEVICE_MUTATION=1`, pushes only to `/tmp`, loads `usbnet` followed
-by `cdc_ether`, reads back `/proc/modules` and USB driver links, and rolls back
-on failure. It does not run DHCP or change routes. Network verification is
-separate; DHCP requires `AHT_ALLOW_NETWORK_MUTATION=1`, and the state is only
+Device loading is guarded. It requires `AHT_ALLOW_DEVICE_MUTATION=1`, pushes
+only to `/tmp`, loads `usbnet` followed by `cdc_ether`, reads back
+`/proc/modules` and USB driver links, and rolls back on failure. On successful
+acceptance the modules remain loaded for the current session and the remote
+package files are removed. It does not run DHCP or change routes. Network
+verification is separate; DHCP requires `AHT_ALLOW_NETWORK_MUTATION=1`, and the state is only
 `connected` when the cellular interface, address, default route, and an
 independent Gateway probe are all present. The real run used the Gateway
 provided by the device's DHCP default route; the value is intentionally not
