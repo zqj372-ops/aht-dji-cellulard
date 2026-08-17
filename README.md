@@ -16,6 +16,7 @@ scripts/build-a133-tina-usb-modules.sh
 scripts/verify-a133-tina-usb-modules.sh
 scripts/verify-a133-tina-network.sh
 scripts/aht-a133-tina-target-contract.sh
+scripts/accept-a133-tina-phase-10.sh
 ```
 
 The builder requires explicit `AHT_KERNEL_TREE`, `AHT_TARGET_CONFIG`,
@@ -93,6 +94,22 @@ the real Gateway host is never echoed. A real `connected` result still
 requires target `cdc_ether` binding, a cellular address, a matching default
 route, DNS configuration, and a successful independent Gateway probe.
 
+For a single auditable real-device run, use the thin orchestration entrypoint:
+
+```sh
+sh scripts/accept-a133-tina-phase-10.sh \
+  --package "$PWD/artifacts/a133-tina-reference-01" \
+  --evidence-dir "/tmp/aht-phase-10-run"
+```
+
+It performs static verification and read-only preflight by default. Device
+loading requires `--allow-device-mutation`; a DHCP/network attempt additionally
+requires `--allow-network-mutation --dhcp --gateway-host HOST`. The entrypoint
+does not accept fixtures, ignores inherited mutation grants, refuses to
+overwrite a non-empty evidence directory, and writes only allowlisted status
+fields. `overall_status=passed` is reserved for a real device with successful
+static, preflight, module load/binding, and network gates.
+
 Run the host checks with:
 
 ```sh
@@ -101,4 +118,5 @@ bash tests/test-collector-redaction.sh
 bash tests/test-build-a133-tina-usb-modules.sh
 bash tests/test-verify-a133-tina-usb-modules.sh
 bash tests/test-a133-tina-network.sh
+bash tests/test-accept-a133-tina-phase-10.sh
 ```

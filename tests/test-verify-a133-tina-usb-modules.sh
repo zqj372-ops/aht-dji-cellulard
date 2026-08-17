@@ -109,7 +109,11 @@ if [ "${1:-}" = "-s" ] && [ "${3:-}" = "shell" ]; then
       fi
       ;;
     *'uname -r'*)
-      printf '%s\n' '4.9.191'
+      if [ "$scenario" = "wrong-kernel-release" ]; then
+        printf '%s\n' '5.4.0'
+      else
+        printf '%s\n' '4.9.191'
+      fi
       ;;
     *openwrt_release*)
       if [ "$scenario" = "wrong-release" ]; then
@@ -119,6 +123,10 @@ if [ "${1:-}" = "-s" ] && [ "${3:-}" = "shell" ]; then
       elif [ "$scenario" = "wrong-metadata" ]; then
         printf '%s\n' "DISTRIB_ID='tina.raymanfeng.20260717.090727'"
         printf '%s\n' "DISTRIB_REVISION='unverified-revision'"
+        printf '%s\n' "DISTRIB_TARGET='a133-aw3/generic v1.0'"
+      elif [ "$scenario" = "wrong-distrib-id" ]; then
+        printf '%s\n' "DISTRIB_ID='unverified-tina-build'"
+        printf '%s\n' "DISTRIB_REVISION='5C1C9C53'"
         printf '%s\n' "DISTRIB_TARGET='a133-aw3/generic v1.0'"
       else
         printf '%s\n' "DISTRIB_ID='tina.raymanfeng.20260717.090727'"
@@ -248,6 +256,28 @@ printf '%s\n' "$output" | grep 'OpenWrt target identity mismatch' >/dev/null
 if grep -E '(^| )push( |$)|shell.*mkdir -p|shell.*insmod' "$RELEASE_LOG" >/dev/null 2>&1; then
   test_fail 'wrong OpenWrt target touched the device'
 fi
+if grep -E 'AHT_KERNEL_COMPAT_CHECK|AHT_USB_IDENTITY_CHECK|AHT_MODULE_STATE|AHT_BINDING_READBACK' "$RELEASE_LOG" >/dev/null 2>&1; then
+  test_fail 'wrong OpenWrt target continued into a later verifier probe'
+fi
+
+KERNEL_RELEASE_LOG="$TEST_ROOT/kernel-release-adb.log"
+KERNEL_RELEASE_STATE="$TEST_ROOT/kernel-release-state"
+: > "$KERNEL_RELEASE_STATE"
+if output=$( \
+  PATH="$FAKE_BIN:$PATH" \
+  FAKE_ADB_LOG="$KERNEL_RELEASE_LOG" \
+  FAKE_ADB_STATE="$KERNEL_RELEASE_STATE" \
+  FAKE_ADB_SCENARIO=wrong-kernel-release \
+  AHT_PACKAGE_DIR="$PACKAGE_DIR" \
+  AHT_ALLOW_DEVICE_MUTATION=1 \
+  sh "$VERIFIER" --load 2>&1
+); then
+  test_fail 'wrong kernel release was accepted for the reference target'
+fi
+printf '%s\n' "$output" | grep 'kernel build identity mismatch' >/dev/null
+if grep -E 'push|insmod|rmmod|AHT_KERNEL_COMPAT_CHECK|AHT_USB_IDENTITY_CHECK|AHT_MODULE_STATE|AHT_BINDING_READBACK' "$KERNEL_RELEASE_LOG" >/dev/null 2>&1; then
+  test_fail 'wrong kernel release touched the device or continued into a later probe'
+fi
 
 BUILD_LOG="$TEST_ROOT/build-identity-adb.log"
 BUILD_STATE="$TEST_ROOT/build-identity-state"
@@ -285,6 +315,28 @@ fi
 printf '%s\n' "$output" | grep 'OpenWrt target identity mismatch' >/dev/null
 if grep -E '(^| )push( |$)|insmod|rmmod|rm -f|rmdir' "$METADATA_LOG" >/dev/null 2>&1; then
   test_fail 'distribution metadata mismatch touched the device'
+fi
+if grep -E 'AHT_KERNEL_COMPAT_CHECK|AHT_USB_IDENTITY_CHECK|AHT_MODULE_STATE|AHT_BINDING_READBACK' "$METADATA_LOG" >/dev/null 2>&1; then
+  test_fail 'distribution metadata mismatch continued into a later verifier probe'
+fi
+
+DISTRIB_ID_LOG="$TEST_ROOT/distrib-id-adb.log"
+DISTRIB_ID_STATE="$TEST_ROOT/distrib-id-state"
+: > "$DISTRIB_ID_STATE"
+if output=$( \
+  PATH="$FAKE_BIN:$PATH" \
+  FAKE_ADB_LOG="$DISTRIB_ID_LOG" \
+  FAKE_ADB_STATE="$DISTRIB_ID_STATE" \
+  FAKE_ADB_SCENARIO=wrong-distrib-id \
+  AHT_PACKAGE_DIR="$PACKAGE_DIR" \
+  AHT_ALLOW_DEVICE_MUTATION=1 \
+  sh "$VERIFIER" --load 2>&1
+); then
+  test_fail 'wrong DISTRIB_ID was accepted for the reference target'
+fi
+printf '%s\n' "$output" | grep 'OpenWrt target identity mismatch' >/dev/null
+if grep -E 'push|insmod|rmmod|AHT_KERNEL_COMPAT_CHECK|AHT_USB_IDENTITY_CHECK|AHT_MODULE_STATE|AHT_BINDING_READBACK' "$DISTRIB_ID_LOG" >/dev/null 2>&1; then
+  test_fail 'wrong DISTRIB_ID touched the device or continued into a later probe'
 fi
 
 COLLISION_LOG="$TEST_ROOT/collision-adb.log"

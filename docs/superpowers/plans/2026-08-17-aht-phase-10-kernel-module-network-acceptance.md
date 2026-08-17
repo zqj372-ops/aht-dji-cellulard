@@ -21,6 +21,11 @@ preflight reports zero ready ADB targets and no matching physical USB device;
 therefore the real `insmod`, CDC-ECM binding, DHCP, and Gateway gates remain
 blocked. No real-device mutation has been attempted.
 
+A thin acceptance entrypoint now composes the existing static, preflight, load,
+and network verifiers into allowlisted evidence files. It does not make fixture
+data eligible for a real acceptance result and requires CLI authorization for
+device/network mutation.
+
 ---
 
 ### Task 1: Remove sensitive identifiers from the Phase 9B evidence path
@@ -217,6 +222,8 @@ git commit -m "feat: verify A133 cellular network state"
 **Files:**
 - Modify: README.md
 - Modify: docs/superpowers/plans/2026-08-17-aht-phase-10-kernel-module-network-acceptance.md
+- Create: scripts/accept-a133-tina-phase-10.sh
+- Test: tests/test-accept-a133-tina-phase-10.sh
 
 - [x] Step 1: Run complete host verification.
 
@@ -226,6 +233,7 @@ bash tests/test-collector-redaction.sh
 bash tests/test-build-a133-tina-usb-modules.sh
 bash tests/test-verify-a133-tina-usb-modules.sh
 bash tests/test-a133-tina-network.sh
+bash tests/test-accept-a133-tina-phase-10.sh
 git diff --check
 ~~~
 
