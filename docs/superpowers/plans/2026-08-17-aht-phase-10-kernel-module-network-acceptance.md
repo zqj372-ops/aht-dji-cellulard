@@ -144,7 +144,9 @@ Pass only if cdc_ether and usbnet are loaded, the CDC-ECM interface is bound, an
 
 > **Current status:** Not evaluated on the real target because the device is not currently ADB-ready. The fake-ADB rollback path is covered by the host test.
 
-- [ ] Step 4: Commit load evidence or failure evidence.
+- [x] Step 4: Commit load evidence or failure evidence.
+
+> **Current status:** A sanitized blocked-load record is present at `docs/verification/hardware/a133-tina-reference-01/phase-10-load.txt`; it records zero ready ADB targets and no mutation attempt.
 
 ~~~sh
 git add docs/verification/hardware/a133-tina-reference-01/phase-10-load.txt docs/superpowers/plans/2026-08-17-aht-phase-10-kernel-module-network-acceptance.md
@@ -180,7 +182,9 @@ The default mode must only read ip, /proc/net/route, DNS configuration, and an i
 
 If DHCP succeeds, record interface/address/route and Gateway RTT without storing credentials or SIM identifiers. If it fails, keep the state degraded and preserve the failure evidence.
 
-- [ ] Step 5: Commit network evidence.
+- [x] Step 5: Commit network evidence.
+
+> **Current status:** A blocked-network record is present at `docs/verification/hardware/a133-tina-reference-01/phase-10-network.txt`; it records that the real network gate was not attempted because device binding was unavailable.
 
 ~~~sh
 git add scripts/verify-a133-tina-network.sh tests/test-a133-tina-network.sh docs/verification/hardware/a133-tina-reference-01/phase-10-network.txt

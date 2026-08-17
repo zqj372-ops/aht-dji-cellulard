@@ -1,0 +1,16 @@
+schema_version=1
+target=A133 Tina Reference Target
+gate=cellular_network_reachability
+status=blocked
+observation_date=2026-08-17
+device_binding_status=not_evaluated
+cellular_interface_readback=not_available
+address_readback=not_available
+default_route_readback=not_available
+gateway_probe=not_attempted
+dhcp_attempted=no
+route_change_attempted=no
+network_mutation_authorized=no
+reason=depends_on_device_load_and_cdc_ecm_binding
+fixture_verifier_status=passed
+next_gate=run_read_only_network_preflight_after_successful_device_binding_then_request_explicit_dhcp_and_route_authorization

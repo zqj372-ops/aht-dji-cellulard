@@ -1,0 +1,16 @@
+schema_version=1
+target=A133 Tina Reference Target
+gate=device_load_and_cdc_ecm_binding
+status=blocked
+observation_date=2026-08-17
+read_only_adb_ready_devices=0
+read_only_physical_usb_reference_match=no
+mutation_authorized=no
+adb_push_attempted=no
+insmod_attempted=no
+rmmod_attempted=no
+usb_mode_changed=no
+at_command_sent=no
+firmware_or_nvram_write=no
+reason=host_did_not_enumerate_the_reference_target
+next_gate=repeat_read_only_preflight_with_exactly_one_ready_adb_target_then_request_explicit_temporary_load_authorization
