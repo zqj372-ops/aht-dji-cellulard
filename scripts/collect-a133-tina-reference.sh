@@ -23,14 +23,22 @@ fi
 DEVICE_SERIAL=$DEVICE_LIST
 mkdir -p "$TARGET_DIR"
 
+REDACTOR="$SCRIPT_DIR/redact-a133-evidence.sh"
+if [ ! -r "$REDACTOR" ]; then
+  printf 'error: evidence redactor is missing: %s\n' "$REDACTOR" >&2
+  exit 1
+fi
+
 normalize_file() {
   output=$1
+  temporary="$output.redacted.$$"
   if command -v perl >/dev/null 2>&1; then
     perl -0pi -e 's/\r//g; s/\e\[[0-9;]*m//g; s/[ \t]+(?=\n)//g' "$output"
   else
-    temporary="$output.tmp.$$"
-    tr -d '\r' < "$output" | sed 's/[[:space:]]\+$//' > "$temporary" && mv "$temporary" "$output"
+    normalized="$output.normalized.$$"
+    tr -d '\r' < "$output" | sed 's/[[:space:]]\+$//' > "$normalized" && mv "$normalized" "$output"
   fi
+  sh "$REDACTOR" < "$output" > "$temporary" && mv "$temporary" "$output"
 }
 
 capture_shell() {
@@ -38,7 +46,7 @@ capture_shell() {
   label=$2
   command_text=$3
   {
-    printf '# target_serial=%s\n# %s\n' "$DEVICE_SERIAL" "$label"
+    printf '# %s\n' "$label"
     adb -s "$DEVICE_SERIAL" shell "$command_text"
     status=$?
     printf '\n# adb_exit=%s\n' "$status"
@@ -49,7 +57,7 @@ capture_shell() {
 capture_config() {
   output=$1
   {
-    printf '# target_serial=%s\n# source=/proc/config.gz, decompressed with zcat\n' "$DEVICE_SERIAL"
+    printf '# source=/proc/config.gz, decompressed with zcat\n'
     adb -s "$DEVICE_SERIAL" shell 'if [ -r /proc/config.gz ]; then zcat /proc/config.gz; else echo CONFIG_UNAVAILABLE; exit 2; fi'
     status=$?
     printf '\n# adb_exit=%s\n' "$status"
@@ -66,7 +74,7 @@ capture_shell "$TARGET_DIR/modules.txt" "module and kernel driver environment" \
   'echo "--- /proc/modules ---"; cat /proc/modules; echo "--- /lib/modules ---"; ls -la /lib/modules 2>/dev/null || true; find /lib/modules -maxdepth 3 -type f 2>/dev/null | sort | head -n 200; echo "--- loader tools ---"; for p in insmod modprobe depmod; do printf "%s=" "$p"; command -v "$p" 2>/dev/null || true; done; echo "--- relevant config ---"; if [ -r /proc/config.gz ]; then zcat /proc/config.gz 2>/dev/null | grep -E "CONFIG_(MODULES|MODVERSIONS|LOCALVERSION|USB_USBNET|USB_NET_|USB_SERIAL_OPTION)" || true; else echo CONFIG_UNAVAILABLE; fi; echo "--- relevant driver nodes ---"; for d in /sys/bus/usb/drivers/usbnet /sys/bus/usb/drivers/cdc_ether /sys/bus/usb/drivers/cdc_ncm /sys/bus/usb/drivers/rndis_host /sys/bus/usb/drivers/qmi_wwan /sys/bus/usb-serial/drivers/option1; do if [ -d "$d" ]; then echo PRESENT:$d; else echo MISSING:$d; fi; done'
 
 capture_shell "$TARGET_DIR/dji-2ca3-4006-lsusb.txt" "DJI USB descriptor evidence" \
-  'if command -v lsusb >/dev/null 2>&1; then lsusb -v -d 2ca3:4006; else echo "LSUSB_UNAVAILABLE: device has no lsusb"; echo "SYSFS_DESCRIPTOR_FALLBACK"; for d in /sys/bus/usb/devices/*; do [ -f "$d/idVendor" ] || continue; [ "$(cat "$d/idVendor" 2>/dev/null)" = "2ca3" ] || continue; [ "$(cat "$d/idProduct" 2>/dev/null)" = "4006" ] || continue; echo "[$d]"; for f in idVendor idProduct manufacturer product serial speed busnum devnum bDeviceClass bDeviceSubClass bDeviceProtocol; do [ -f "$d/$f" ] && printf "%s=" "$f" && cat "$d/$f"; done; for i in "$d":*; do [ -d "$i" ] || continue; echo "[$i]"; for f in bInterfaceClass bInterfaceSubClass bInterfaceProtocol interface modalias; do [ -f "$i/$f" ] && printf "%s=" "$f" && cat "$i/$f"; done; if [ -L "$i/driver" ]; then echo "driver=$(readlink "$i/driver")"; else echo driver=UNBOUND; fi; done; done; fi'
+  'if command -v lsusb >/dev/null 2>&1; then lsusb -v -d 2ca3:4006; else echo "LSUSB_UNAVAILABLE: device has no lsusb"; echo "SYSFS_DESCRIPTOR_FALLBACK"; for d in /sys/bus/usb/devices/*; do [ -f "$d/idVendor" ] || continue; [ "$(cat "$d/idVendor" 2>/dev/null)" = "2ca3" ] || continue; [ "$(cat "$d/idProduct" 2>/dev/null)" = "4006" ] || continue; echo "[$d]"; for f in idVendor idProduct manufacturer product speed busnum devnum bDeviceClass bDeviceSubClass bDeviceProtocol; do [ -f "$d/$f" ] && printf "%s=" "$f" && cat "$d/$f"; done; for i in "$d":*; do [ -d "$i" ] || continue; echo "[$i]"; for f in bInterfaceClass bInterfaceSubClass bInterfaceProtocol interface modalias; do [ -f "$i/$f" ] && printf "%s=" "$f" && cat "$i/$f"; done; if [ -L "$i/driver" ]; then echo "driver=$(readlink "$i/driver")"; else echo driver=UNBOUND; fi; done; done; fi'
 
 capture_shell "$TARGET_DIR/dji-2ca3-4006-dmesg.txt" "recent kernel log after DJI USB attach" \
   'dmesg | tail -n 500'

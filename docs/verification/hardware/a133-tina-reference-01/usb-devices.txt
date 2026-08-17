@@ -1,4 +1,3 @@
-# target_serial=5c000c28344588823dd
 # USB debugfs and sysfs evidence
 
 T:  Bus=01 Lev=00 Prnt=00 Port=00 Cnt=00 Dev#=  1 Spd=480  MxCh= 1

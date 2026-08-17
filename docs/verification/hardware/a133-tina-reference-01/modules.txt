@@ -1,4 +1,3 @@
-# target_serial=5c000c28344588823dd
 # module and kernel driver environment
 --- /proc/modules ---
 xradio_wlan 1050 0 - Live 0xffffff8000abd000
