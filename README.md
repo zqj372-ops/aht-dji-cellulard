@@ -30,6 +30,19 @@ Both modules are AArch64 ELF files with vermagic
 `4.9.191 SMP preempt mod_unload aarch64`; `cdc_ether.ko` declares a dependency
 on `usbnet` and a generic CDC-ECM class alias.
 
+Phase 10 acceptance status:
+
+| Gate | Status | Evidence |
+| --- | --- | --- |
+| Build | Passed | Reproducible host build with recorded source, config, and toolchain inputs |
+| Package/static | Passed | SHA-256, AArch64 ELF, kernel release, vermagic, and module metadata checks |
+| Device load/binding | Blocked | The latest read-only ADB check found zero ready targets; no `insmod` was attempted |
+| Network | Blocked | Depends on successful device binding; no DHCP, route, or Gateway mutation was attempted |
+
+The checked-in Phase 9B evidence was sanitized with the redaction helper. It
+was not recollected from the device after that change because ADB was not ready;
+the repository does not claim a fresh post-redaction capture.
+
 This is a candidate build, not yet a claim of exact TRIMUI vendor-kernel ABI:
 the matching private Tina kernel tree and original GCC 7.4.1 toolchain path
 were not found on the host. The package must pass device-side load and binding

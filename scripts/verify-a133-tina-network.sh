@@ -42,7 +42,7 @@ if [ "$MODE" = "fixture" ]; then
   [ "$DHCP" -eq 0 ] || fail '--dhcp is only valid with --device'
   [ -r "$FIXTURE" ] || fail "network fixture is missing: $FIXTURE"
 fi
-if [ "$DHCP" -eq 1 ] && [ "\${AHT_ALLOW_NETWORK_MUTATION:-}" != "1" ]; then
+if [ "$DHCP" -eq 1 ] && [ "${AHT_ALLOW_NETWORK_MUTATION:-}" != "1" ]; then
   fail 'DHCP requires AHT_ALLOW_NETWORK_MUTATION=1'
 fi
 
@@ -97,7 +97,7 @@ ROOT_UID=$(adb -s "$DEVICE_SERIAL" shell id -u 2>/dev/null | tr -d '\r\n')
 KERNEL_RELEASE=$(adb -s "$DEVICE_SERIAL" shell uname -r 2>/dev/null | tr -d '\r\n')
 [ "$KERNEL_RELEASE" = "4.9.191" ] || fail "device kernel release mismatch: $KERNEL_RELEASE"
 
-if [ -n "\${AHT_CELLULAR_INTERFACE:-}" ]; then
+if [ -n "${AHT_CELLULAR_INTERFACE:-}" ]; then
   CELLULAR_INTERFACE=$AHT_CELLULAR_INTERFACE
 else
   CELLULAR_INTERFACE=$(adb -s "$DEVICE_SERIAL" shell 'ip -o link show' 2>/dev/null | tr -d '\r' | awk -F': ' '$2 ~ /^(eth|usb|enx)/ {print $2; exit}' | awk '{print $1}')
@@ -116,7 +116,7 @@ ADDRESS=$(adb -s "$DEVICE_SERIAL" shell "ip -o -4 addr show dev '$CELLULAR_INTER
 DEFAULT_ROUTE=$(adb -s "$DEVICE_SERIAL" shell 'ip route show default' 2>/dev/null | tr -d '\r' | awk '$1 == "default" {print $3; exit}')
 
 GATEWAY_PROBE=missing
-if [ -n "\${AHT_GATEWAY_HOST:-}" ] && [ -n "$DEFAULT_ROUTE" ]; then
+if [ -n "${AHT_GATEWAY_HOST:-}" ] && [ -n "$DEFAULT_ROUTE" ]; then
   if adb -s "$DEVICE_SERIAL" shell "ping -c 1 -W 3 '$AHT_GATEWAY_HOST'" >/dev/null 2>&1; then
     GATEWAY_PROBE=pass
   else

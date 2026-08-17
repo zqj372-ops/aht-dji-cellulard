@@ -116,27 +116,27 @@ adb -s "$DEVICE_SERIAL" shell "mkdir -p '$REMOTE_DIR'"
 adb -s "$DEVICE_SERIAL" push "$PACKAGE_DIR/usbnet.ko" "$REMOTE_DIR/usbnet.ko" >/dev/null
 adb -s "$DEVICE_SERIAL" push "$PACKAGE_DIR/cdc_ether.ko" "$REMOTE_DIR/cdc_ether.ko" >/dev/null
 
-loaded_usbnet=0
-loaded_cdc_ether=0
+attempted_usbnet=0
+attempted_cdc_ether=0
 rollback() {
-  if [ "$loaded_cdc_ether" -eq 1 ]; then
+  if [ "$attempted_cdc_ether" -eq 1 ]; then
     adb -s "$DEVICE_SERIAL" shell 'rmmod cdc_ether' >/dev/null 2>&1 || true
   fi
-  if [ "$loaded_usbnet" -eq 1 ]; then
+  if [ "$attempted_usbnet" -eq 1 ]; then
     adb -s "$DEVICE_SERIAL" shell 'rmmod usbnet' >/dev/null 2>&1 || true
   fi
 }
 
+attempted_usbnet=1
 if ! adb -s "$DEVICE_SERIAL" shell "insmod '$REMOTE_DIR/usbnet.ko'"; then
   rollback
   fail 'insmod usbnet.ko failed; rollback attempted'
 fi
-loaded_usbnet=1
+attempted_cdc_ether=1
 if ! adb -s "$DEVICE_SERIAL" shell "insmod '$REMOTE_DIR/cdc_ether.ko'"; then
   rollback
   fail 'insmod cdc_ether.ko failed; rollback attempted'
 fi
-loaded_cdc_ether=1
 
 if ! adb -s "$DEVICE_SERIAL" shell 'grep -q "^usbnet " /proc/modules && grep -q "^cdc_ether " /proc/modules'; then
   rollback
