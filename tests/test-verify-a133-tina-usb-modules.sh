@@ -90,9 +90,9 @@ if [ "${1:-}" = "-s" ] && [ "${3:-}" = "shell" ]; then
       ;;
     *openwrt_release*)
       if [ "$scenario" = "wrong-release" ]; then
-        printf '%s\n' "DISTRIB_TARGET='a133-aw3/generic v1.0'"
+        printf '%s\n' "DISTRIB_TARGET='a133-other/generic v1.0'"
       else
-        printf '%s\n' "DISTRIB_TARGET='a133-aw3/generic'"
+        printf '%s\n' "DISTRIB_TARGET='a133-aw3/generic v1.0'"
       fi
       ;;
     *AHT_USB_IDENTITY_CHECK*)

@@ -8,6 +8,18 @@
 
 **Tech Stack:** Linux kernel 4.9.191, AArch64 cross compiler, POSIX shell, ADB, readelf, SHA-256, Tina Linux 4.9.191 with CONFIG_MODULES=y and CONFIG_MODVERSIONS disabled.
 
+### Current status (2026-08-17)
+
+The host build, package/static checks, target-identity gates, fake-ADB load
+success/readback, reverse-order rollback, and fixture/device network state
+checks pass. The official TrimUI firmware evidence confirms the same
+`a133-aw3/generic v1.0` target family, kernel release, vermagic, compiler
+identity, and normalized kernel options, but the private vendor source tree
+and original compiler binary are still unavailable. The current read-only
+preflight reports zero ready ADB targets and no matching physical USB device;
+therefore the real `insmod`, CDC-ECM binding, DHCP, and Gateway gates remain
+blocked. No real-device mutation has been attempted.
+
 ---
 
 ### Task 1: Remove sensitive identifiers from the Phase 9B evidence path
@@ -109,7 +121,7 @@ Expected: FAIL because no verifier exists.
 
 - [x] Step 3: Implement static verification and guarded load.
 
-Static mode must validate manifest, hashes, ELF machine, module names, and target kernel release. Device mode must require exactly one ready ADB target, root, uname -r=4.9.191, and an explicit mutation flag before pushing to a temporary directory and running insmod usbnet.ko then insmod cdc_ether.ko. After each action it must read back /proc/modules, USB driver bindings, and dmesg; on any failure it must unload in reverse order and report load_failed.
+Static mode must validate manifest, hashes, ELF machine, module names, and target kernel release. Device mode must require exactly one ready ADB target, root, uname -r=4.9.191, and an exact A133 Tina OpenWrt target before the explicit mutation flag permits pushing to a temporary directory and running insmod usbnet.ko then insmod cdc_ether.ko. After each action it must read back /proc/modules and the target USB driver bindings/netdev; it must not print raw serials or dmesg, and on any failure it must unload in reverse order and report the cleanup result.
 
 - [x] Step 4: Run static verification against the candidate package.
 
@@ -174,7 +186,7 @@ Expected: FAIL because no network verifier exists.
 
 - [x] Step 3: Implement guarded network verification.
 
-The default mode must only read ip, /proc/net/route, DNS configuration, and an independently supplied Gateway endpoint. DHCP and route changes must require AHT_ALLOW_NETWORK_MUTATION=1; the verifier must never infer 4G from USB presence alone and must emit degraded/offline when any independent fact is missing.
+The default mode must only read the target USB binding, `ip` address/route state, DNS configuration, and an independently supplied Gateway endpoint. DHCP and route changes must require AHT_ALLOW_NETWORK_MUTATION=1; the verifier must never infer 4G from USB presence alone and must emit degraded/offline when any independent fact is missing.
 
 - [ ] Step 4: Run the network gate and record the result.
 

@@ -73,6 +73,13 @@ The host test suite also exercises fake-ADB success/readback and reverse-order
 rollback after a simulated `cdc_ether` load failure. These tests validate the
 guard logic only and do not substitute for real target evidence.
 
+Both device verifiers require the exact A133 Tina target family
+(`a133-aw3/generic` or `a133-aw3/generic v1.0`) before they inspect or mutate
+the target. Network output is presence-only for addresses, routes, and DNS;
+the real Gateway host is never echoed. A real `connected` result still
+requires target `cdc_ether` binding, a cellular address, a matching default
+route, DNS configuration, and a successful independent Gateway probe.
+
 Run the host checks with:
 
 ```sh

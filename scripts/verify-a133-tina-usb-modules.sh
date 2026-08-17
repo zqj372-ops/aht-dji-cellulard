@@ -259,7 +259,7 @@ validate_device_gate() {
       value=$2
       if (substr(value, 1, 1) == single || substr(value, 1, 1) == double) value=substr(value, 2)
       if (substr(value, length(value), 1) == single || substr(value, length(value), 1) == double) value=substr(value, 1, length(value) - 1)
-      if (value == "a133-aw3/generic") found=1
+      if (value == "a133-aw3/generic" || value == "a133-aw3/generic v1.0") found=1
     }
     END { exit(found ? 0 : 1) }
   '; then
@@ -299,8 +299,10 @@ remove_remote_module_files() {
   if ! adb -s "$DEVICE_SERIAL" shell "rm -f '$REMOTE_DIR/usbnet.ko' '$REMOTE_DIR/cdc_ether.ko'" >/dev/null 2>&1; then
     return 1
   fi
+  if ! adb -s "$DEVICE_SERIAL" shell "rmdir '$REMOTE_DIR'" >/dev/null 2>&1; then
+    return 1
+  fi
   REMOTE_MODULE_FILES_REMOVED=1
-  adb -s "$DEVICE_SERIAL" shell "rmdir '$REMOTE_DIR'" >/dev/null 2>&1 || true
   REMOTE_DIR=
   return 0
 }
