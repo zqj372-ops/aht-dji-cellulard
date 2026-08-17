@@ -44,9 +44,14 @@ was not recollected from the device after that change because ADB was not ready;
 the repository does not claim a fresh post-redaction capture.
 
 This is a candidate build, not yet a claim of exact TRIMUI vendor-kernel ABI:
-the matching private Tina kernel tree and original GCC 7.4.1 toolchain path
-were not found on the host. The package must pass device-side load and binding
-readback before it is treated as accepted.
+the matching private Tina kernel tree and original GCC 7.4.1 toolchain binary
+were not found on the host. Official Brick firmware provenance now confirms the
+same `a133-aw3/generic v1.0` target family, `4.9.191` vermagic, GCC 7.4.1
+identity, and an option-equivalent kernel config; it still does not contain
+`usbnet.ko` or `cdc_ether.ko`, and the Brick/Pro reference-target relationship
+is not confirmed. The package must pass device-side load and binding readback
+before it is treated as accepted. See
+`docs/verification/hardware/a133-tina-reference-01/vendor-firmware-provenance.txt`.
 
 Static package verification:
 

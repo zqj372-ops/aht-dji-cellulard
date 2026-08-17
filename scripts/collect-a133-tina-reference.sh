@@ -16,7 +16,6 @@ DEVICE_COUNT=$(printf '%s\n' "$DEVICE_LIST" | sed '/^[[:space:]]*$/d' | wc -l | 
 
 if [ "$DEVICE_COUNT" -ne 1 ]; then
   printf 'error: expected exactly one ready adb device, found %s\n' "$DEVICE_COUNT" >&2
-  adb devices >&2 || true
   exit 1
 fi
 
