@@ -1,10 +1,9 @@
-# target_serial=5c000c28344588823dd
 # kernel identity
 Linux TinaLinux 4.9.191 #913 SMP PREEMPT Fri Jul 17 09:09:00 UTC 2026 aarch64 GNU/Linux
 --- /proc/version ---
 Linux version 4.9.191 (TRIMUIDEV@NUC) (gcc version 7.4.1 (OpenWrt/Linaro GCC 7.4-2019.02 2019-02) ) #913 SMP PREEMPT Fri Jul 17 09:09:00 UTC 2026
 --- /proc/cmdline ---
-console=ttyS0,115200 root=/dev/mmcblk0p5 rootwait init=/sbin/init rdinit=/rdinit loglevel=8 earlyprintk=sunxi-uart,0x05000000 initcall_debug=0 loglevel=8 partitions=bootloader@mmcblk0p1:env@mmcblk0p2:env-redund@mmcblk0p3:boot@mmcblk0p4:rootfs@mmcblk0p5:rootfs_data@mmcblk0p6:private@mmcblk0p7:recovery@mmcblk0p8:pstore@mmcblk0p9:UDISK@mmcblk0p10 cma=64M gpt=1 rotpk_status=0 pstore_blk.blkdev=/dev/mmcblk0p9 pstore.update_ms=1000 androidboot.mode=normal androidboot.serialno=5c000c28344588823dd androidboot.hardware=sun50iw10p1 boot_type=2 androidboot.boot_type=2 androidboot.secure_os_exist=0 gpt=1 uboot_message=2018.05(07/11/2026-11:42:17) disp_reserve=3145728,0x7b81d480 androidboot.dramsize=1024 lcd=gh7003
+console=ttyS0,115200 root=/dev/mmcblk0p5 rootwait init=/sbin/init rdinit=/rdinit loglevel=8 earlyprintk=sunxi-uart,0x05000000 initcall_debug=0 loglevel=8 partitions=bootloader@mmcblk0p1:env@mmcblk0p2:env-redund@mmcblk0p3:boot@mmcblk0p4:rootfs@mmcblk0p5:rootfs_data@mmcblk0p6:private@mmcblk0p7:recovery@mmcblk0p8:pstore@mmcblk0p9:UDISK@mmcblk0p10 cma=64M gpt=1 rotpk_status=0 pstore_blk.blkdev=/dev/mmcblk0p9 pstore.update_ms=1000 androidboot.mode=normal androidboot.serialno=<redacted> androidboot.hardware=sun50iw10p1 boot_type=2 androidboot.boot_type=2 androidboot.secure_os_exist=0 gpt=1 uboot_message=2018.05(07/11/2026-11:42:17) disp_reserve=3145728,0x7b81d480 androidboot.dramsize=1024 lcd=gh7003
 --- /etc/openwrt_release ---
 DISTRIB_ID='tina.raymanfeng.20260717.090727'
 DISTRIB_RELEASE='Neptune'

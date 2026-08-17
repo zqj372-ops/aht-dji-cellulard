@@ -1,4 +1,3 @@
-# target_serial=5c000c28344588823dd
 # DJI USB descriptor evidence
 LSUSB_UNAVAILABLE: device has no lsusb
 SYSFS_DESCRIPTOR_FALLBACK

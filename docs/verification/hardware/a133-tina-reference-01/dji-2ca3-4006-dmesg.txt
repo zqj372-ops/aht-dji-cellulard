@@ -1,4 +1,3 @@
-# target_serial=5c000c28344588823dd
 # recent kernel log after DJI USB attach
 [ 2224.842364] Invalid sched_group_energy for Cluster3
 [ 2224.842367] Invalid sched_group_energy for CPU2
