@@ -1,0 +1,113 @@
+<style>
+  .aht-visual { color:#e8edf2; }
+  .aht-visual * { box-sizing:border-box; }
+  .aht-lead { margin-bottom:24px; }
+  .aht-lead h2 { margin:0 0 8px; letter-spacing:-.025em; }
+  .aht-lead p { max-width:760px; margin:0; color:#a9b4bd; }
+  .aht-options { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }
+  .aht-option { min-width:0; cursor:pointer; transition:transform .18s ease, border-color .18s ease; }
+  .aht-option:hover { transform:translateY(-2px); }
+  .aht-option.selected { border-color:#8bd3b4; }
+  .aht-option > .aht-label { display:flex; justify-content:space-between; align-items:center; margin-bottom:9px; color:#eef4f5; font-size:14px; font-weight:650; }
+  .aht-label small { color:#8998a3; font-size:11px; font-weight:500; }
+  .aht-screen { aspect-ratio:4 / 3; overflow:hidden; padding:13px 14px 12px; border:1px solid #3a4651; border-radius:14px; background:#090d12; box-shadow:0 13px 32px rgba(0,0,0,.25); }
+  .aht-screen--rail { display:grid; grid-template-columns:54px 1fr; gap:13px; padding:0; }
+  .aht-rail { padding:16px 8px; background:#121a21; border-right:1px solid #27333d; }
+  .aht-brand { display:flex; align-items:center; gap:8px; margin-bottom:20px; color:#f3f6f8; font-size:10px; font-weight:700; }
+  .aht-brand-mark { display:grid; place-items:center; width:25px; height:25px; border:1px solid #5f7383; color:#ffac4a; font-size:11px; }
+  .aht-rail-nav { display:grid; gap:12px; }
+  .aht-rail-nav span { display:grid; place-items:center; width:34px; height:34px; border:1px solid transparent; border-radius:9px; color:#7c8e9a; font-size:13px; }
+  .aht-rail-nav .active { color:#0a1317; background:#ffab48; border-color:#ffab48; }
+  .aht-main { min-width:0; padding:16px 17px; }
+  .aht-topline { display:flex; justify-content:space-between; align-items:center; color:#91a0aa; font-size:9px; }
+  .aht-status { color:#6fd5a7; }
+  .aht-title { display:flex; align-items:end; justify-content:space-between; margin:16px 0 13px; }
+  .aht-title h3 { margin:0; color:#f4f7fa; font-size:22px; letter-spacing:-.04em; line-height:1; }
+  .aht-title p { margin:5px 0 0; color:#8c9aa4; font-size:10px; }
+  .aht-count { color:#ffab48; font-size:23px; font-weight:700; line-height:1; }
+  .aht-count small { display:block; margin-top:3px; color:#7c8c96; font-size:8px; font-weight:500; text-align:right; }
+  .aht-list { display:grid; gap:8px; }
+  .aht-task { display:grid; grid-template-columns:28px 1fr auto; align-items:center; gap:8px; padding:8px; border:1px solid #2a3640; border-left:3px solid #ffab48; border-radius:8px; background:#151e26; }
+  .aht-task--green { border-left-color:#6fd5a7; }
+  .aht-task--red { border-left-color:#ff6e78; }
+  .aht-icon { display:grid; place-items:center; width:28px; height:28px; border:1px solid #425361; border-radius:8px; background:#202b35; color:#ffab48; }
+  .aht-icon svg { width:17px; height:17px; }
+  .aht-task strong { display:block; overflow:hidden; color:#e9eef2; font-size:10px; font-weight:650; text-overflow:ellipsis; white-space:nowrap; }
+  .aht-task span { display:block; margin-top:3px; overflow:hidden; color:#8e9da8; font-size:8px; text-overflow:ellipsis; white-space:nowrap; }
+  .aht-chip { padding:4px 5px; border-radius:5px; color:#ffcb8d; background:#3a2a1d; font-size:7px; white-space:nowrap; }
+  .aht-chip--green { color:#a9edc9; background:#1c382c; }
+  .aht-chip--red { color:#ffc0c2; background:#3b2227; }
+  .aht-bottom { display:flex; justify-content:space-between; align-items:center; margin-top:13px; padding-top:9px; border-top:1px solid #26323c; color:#84939e; font-size:8px; }
+  .aht-bottom strong { color:#e7edf0; font-weight:650; }
+  .aht-bottom b { color:#6fd5a7; font-weight:650; }
+  .aht-screen--grid { padding:0; background:#0d1318; }
+  .aht-grid-head { display:flex; justify-content:space-between; align-items:center; padding:13px 15px; background:#16212a; border-bottom:1px solid #2d3b46; }
+  .aht-grid-head strong { color:#f4f7f9; font-size:15px; letter-spacing:-.04em; }
+  .aht-grid-head span { color:#6fd5a7; font-size:8px; }
+  .aht-grid-body { display:grid; grid-template-columns:1.15fr .85fr; gap:9px; padding:12px; }
+  .aht-panel { min-width:0; padding:10px; border:1px solid #2d3a45; border-radius:9px; background:#151e26; }
+  .aht-panel h4 { margin:0 0 8px; color:#98a7b0; font-size:8px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; }
+  .aht-panel--wide { grid-row:span 2; }
+  .aht-agent-row { display:flex; align-items:center; gap:7px; padding:7px 0; border-top:1px solid #293640; }
+  .aht-agent-row:first-of-type { border-top:0; padding-top:0; }
+  .aht-agent-copy { min-width:0; flex:1; }
+  .aht-agent-copy strong { display:block; color:#eef3f5; font-size:9px; }
+  .aht-agent-copy span { display:block; margin-top:2px; overflow:hidden; color:#82919c; font-size:7px; text-overflow:ellipsis; white-space:nowrap; }
+  .aht-dot { width:6px; height:6px; border-radius:50%; background:#6fd5a7; box-shadow:0 0 8px #6fd5a7; }
+  .aht-dot--orange { background:#ffab48; box-shadow:0 0 8px #ffab48; }
+  .aht-kpi { display:flex; justify-content:space-between; margin-top:8px; color:#85949e; font-size:8px; }
+  .aht-kpi strong { color:#f2f5f7; font-size:11px; }
+  .aht-bars { display:flex; align-items:end; gap:3px; height:40px; margin-top:6px; }
+  .aht-bars i { flex:1; min-width:3px; border-radius:3px 3px 0 0; background:#ffab48; }
+  .aht-bars i:nth-child(1){height:36%;}.aht-bars i:nth-child(2){height:55%;}.aht-bars i:nth-child(3){height:46%;}.aht-bars i:nth-child(4){height:76%;}.aht-bars i:nth-child(5){height:68%;}.aht-bars i:nth-child(6){height:91%;}.aht-bars i:nth-child(7){height:82%;}
+  .aht-screen--pixel { padding:12px; border-color:#4c4c4c; border-radius:4px; background:#070909; font-family:ui-monospace,monospace; }
+  .aht-pixel-top { display:flex; justify-content:space-between; padding-bottom:7px; border-bottom:1px solid #49504c; color:#c5d0cb; font-size:8px; }
+  .aht-pixel-top b { color:#6fd5a7; }
+  .aht-pixel-title { margin:14px 0 9px; color:#f0f4f2; font-size:17px; font-weight:700; }
+  .aht-pixel-sub { margin-bottom:10px; color:#8d9b95; font-size:8px; }
+  .aht-pixel-row { display:grid; grid-template-columns:23px 1fr 42px; gap:7px; align-items:center; padding:7px 5px; border-top:1px solid #313936; color:#dce4df; font-size:8px; }
+  .aht-pixel-row:first-of-type { border-top:0; }
+  .aht-pixel-mark { display:grid; place-items:center; height:23px; border:1px solid #65716b; color:#ffab48; font-size:11px; }
+  .aht-pixel-row span { color:#83918b; font-size:7px; }
+  .aht-pixel-row em { color:#ffab48; font-style:normal; font-size:7px; text-align:right; }
+  .aht-pixel-footer { display:flex; justify-content:space-between; margin-top:17px; padding-top:8px; border-top:1px solid #49504c; color:#8d9b95; font-size:8px; }
+  .aht-pixel-footer b { color:#6fd5a7; }
+  @media (max-width:900px){ .aht-options{grid-template-columns:1fr;} .aht-screen{max-width:520px;} }
+</style>
+
+<div class="aht-visual">
+  <div class="aht-lead">
+    <h2>手持 AI 终端 · 视觉方向</h2>
+    <p>三个方向都保留 1024×768 设备比例；重点比较中文排版、信息密度、Agent 图标语义和导航层级。推荐 A：最适合当前 AHT 的工业主控定位。</p>
+  </div>
+
+  <div class="aht-options">
+    <div class="aht-option mockup" data-choice="a-industrial" onclick="toggleSelect(this)">
+      <div class="aht-label"><span>A · 工业主控 <small>推荐</small></span><span>清晰 / 稳定</span></div>
+      <div class="aht-screen">
+        <div class="aht-topline"><span>AHT / FIELD CONSOLE</span><span class="aht-status">● GATEWAY ONLINE</span></div>
+        <div class="aht-title"><div><h3>现在需要你</h3><p>4 个事项等待确认 · 2026-08-18 09:42</p></div><div class="aht-count">04<small>待处理</small></div></div>
+        <div class="aht-list">
+          <div class="aht-task"><div class="aht-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3 20 7.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m8 12 2.5 2.5L16 9"/></svg></div><div><strong>确认部署到生产环境</strong><span>Codex · 当前分支已准备好</span></div><b class="aht-chip">高风险</b></div>
+          <div class="aht-task aht-task--green"><div class="aht-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12h16M12 4v16"/><circle cx="12" cy="12" r="8"/></svg></div><div><strong>检查远程任务输出</strong><span>DeepSeek · 已完成一轮分析</span></div><b class="aht-chip aht-chip--green">已完成</b></div>
+          <div class="aht-task"><div class="aht-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 5h14v14H5z"/><path d="M8 9h8M8 13h5"/></svg></div><div><strong>补充项目运行参数</strong><span>Claude Code · 等待输入</span></div><b class="aht-chip">待输入</b></div>
+          <div class="aht-task aht-task--red"><div class="aht-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 4 21 20H3L12 4Z"/><path d="M12 9v5m0 3h.01"/></svg></div><div><strong>数据源连接需要复核</strong><span>OpenClaw · 上游响应异常</span></div><b class="aht-chip aht-chip--red">需复核</b></div>
+        </div>
+        <div class="aht-bottom"><span>4G · 38ms · VPN <b>已开</b></span><span>电量 <strong>82%</strong></span></div>
+      </div>
+    </div>
+
+    <div class="aht-option mockup" data-choice="b-command" onclick="toggleSelect(this)">
+      <div class="aht-label"><span>B · 信息中枢</span><span>现代 / 结构化</span></div>
+      <div class="aht-screen aht-screen--rail">
+        <aside class="aht-rail"><div class="aht-brand"><span class="aht-brand-mark">A</span><span>AHT</span></div><div class="aht-rail-nav"><span class="active">⌂</span><span>◈</span><span>◎</span><span>▤</span><span>⌁</span></div></aside>
+        <div class="aht-main"><div class="aht-topline"><span>FIELD CONSOLE / HOME</span><span class="aht-status">ONLINE · 38ms</span></div><div class="aht-title"><div><h3>工作台</h3><p>Agent、服务器与待处理事项</p></div><div class="aht-count">04<small>待处理</small></div></div><div class="aht-list"><div class="aht-task"><div class="aht-icon">◇</div><div><strong>确认部署到生产环境</strong><span>Codex · 需要批准</span></div><b class="aht-chip">批准</b></div><div class="aht-task aht-task--green"><div class="aht-icon">＋</div><div><strong>检查远程任务输出</strong><span>DeepSeek · 已完成</span></div><b class="aht-chip aht-chip--green">完成</b></div><div class="aht-task"><div class="aht-icon">▤</div><div><strong>补充项目运行参数</strong><span>Claude Code · 等待输入</span></div><b class="aht-chip">输入</b></div></div><div class="aht-bottom"><span>Agents <strong>07</strong> · Servers <strong>02</strong></span><span>FN 语音</span></div></div>
+      </div>
+    </div>
+
+    <div class="aht-option mockup" data-choice="c-pixel" onclick="toggleSelect(this)">
+      <div class="aht-label"><span>C · 像素终端</span><span>复古 / 高密度</span></div>
+      <div class="aht-screen aht-screen--pixel"><div class="aht-pixel-top"><span>AHT FIELD TERMINAL</span><b>● READY</b></div><div class="aht-pixel-title">现在需要你</div><div class="aht-pixel-sub">04 ITEMS REQUIRE ATTENTION</div><div class="aht-pixel-row"><div class="aht-pixel-mark">◇</div><div>确认部署到生产环境<span>CODEX · 需要批准</span></div><em>HIGH</em></div><div class="aht-pixel-row"><div class="aht-pixel-mark">＋</div><div>检查远程任务输出<span>DEEPSEEK · 已完成</span></div><em>DONE</em></div><div class="aht-pixel-row"><div class="aht-pixel-mark">▤</div><div>补充项目运行参数<span>CLAUDE CODE · 等待输入</span></div><em>INPUT</em></div><div class="aht-pixel-row"><div class="aht-pixel-mark">!</div><div>数据源连接需要复核<span>OPENCLAW · 上游异常</span></div><em>REVIEW</em></div><div class="aht-pixel-footer"><span>4G · 38ms · VPN ON</span><b>BATTERY 82%</b></div></div>
+    </div>
+  </div>
+</div>

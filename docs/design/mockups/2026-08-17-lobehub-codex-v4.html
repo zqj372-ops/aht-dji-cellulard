@@ -1,0 +1,70 @@
+<style>
+  :root { --ink:#eef4f5; --muted:#94a3aa; --line:rgba(255,255,255,.12); --panel:rgba(255,255,255,.065); --orange:#ff9a3d; --green:#66d69a; --yellow:#ffd338; }
+  .intro { max-width:820px; margin-bottom:24px; }
+  .intro h2 { margin-bottom:7px; }
+  .intro .subtitle { margin:0; }
+  .layout { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(270px,.85fr); gap:24px; align-items:start; }
+  .device { aspect-ratio:4/3; padding:19px; border-radius:18px; background:#0a0f16; border:7px solid #222b34; box-shadow:inset 0 0 0 1px rgba(255,255,255,.07),0 20px 55px rgba(0,0,0,.4); color:var(--ink); font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif; }
+  .device * { box-sizing:border-box; }
+  .status { display:flex; justify-content:space-between; align-items:center; color:#b5c1c7; font-size:10px; margin-bottom:20px; }
+  .status-left,.status-right { display:flex; gap:10px; align-items:center; }
+  .dot { width:6px; height:6px; border-radius:50%; background:var(--orange); box-shadow:0 0 10px currentColor; }
+  .title-row { display:flex; align-items:end; justify-content:space-between; margin-bottom:16px; }
+  .screen-title { font-size:26px; font-weight:750; letter-spacing:-.065em; }
+  .screen-sub { color:var(--muted); font-size:10px; margin-top:5px; }
+  .count { color:var(--orange); font-size:29px; font-weight:750; letter-spacing:-.06em; line-height:.8; }
+  .count-label { color:var(--muted); font-size:9px; text-align:right; margin-top:5px; }
+  .need-card { display:flex; gap:12px; align-items:center; padding:12px 14px; margin:8px 0; border-radius:12px; background:var(--panel); border:1px solid var(--line); }
+  .need-card:first-of-type { border-color:rgba(255,154,61,.44); background:linear-gradient(90deg,rgba(255,154,61,.13),rgba(255,255,255,.05)); }
+  .brand-icon { flex:0 0 37px; width:37px; height:37px; display:grid; place-items:center; border-radius:11px; overflow:hidden; }
+  .brand-icon img { width:24px; height:24px; object-fit:contain; display:block; }
+  .brand-icon.codex { background:#171b22; }
+  .brand-icon.codex img { filter:invert(1); }
+  .brand-icon.hermes { color:var(--yellow); background:#28200c; font-family:Georgia,serif; font-size:24px; }
+  .brand-icon.openclaw { background:#241215; }
+  .brand-icon.openclaw img { width:29px; height:29px; }
+  .agent-name { font-size:13px; font-weight:700; }
+  .agent-desc { color:var(--muted); font-size:10px; margin-top:4px; }
+  .time { margin-left:auto; align-self:flex-start; color:var(--muted); font-size:9px; white-space:nowrap; }
+  .arrow { color:#6d7b83; font-size:15px; }
+  .bottom { display:flex; justify-content:space-between; margin-top:15px; padding-top:11px; border-top:1px solid var(--line); color:#9aa9b0; font-size:9px; }
+  .bottom strong { color:var(--ink); }
+  .notes { padding:18px; border:1px solid rgba(255,255,255,.1); border-radius:15px; background:rgba(255,255,255,.035); }
+  .notes h3 { margin:0 0 14px; font-size:15px; }
+  .source { display:flex; gap:10px; align-items:center; padding:11px 0; border-top:1px solid var(--line); }
+  .source:first-of-type { border-top:0; padding-top:0; }
+  .source .brand-icon { flex-basis:30px; width:30px; height:30px; border-radius:9px; }
+  .source .brand-icon img { width:20px; height:20px; }
+  .source .brand-icon.openclaw img { width:23px; height:23px; }
+  .copy { flex:1; min-width:0; }
+  .copy strong { display:block; font-size:11px; }
+  .copy span { display:block; margin-top:3px; color:var(--muted); font-size:9px; line-height:1.45; }
+  .tag { color:#a9bbff; font-size:8px; white-space:nowrap; }
+  .wordmark { width:65px; height:12px; object-fit:contain; object-position:left center; margin-top:8px; opacity:.9; }
+  .notice { margin-top:16px; padding:11px 12px; border-radius:10px; background:rgba(255,154,61,.08); border:1px solid rgba(255,154,61,.22); color:#f6c793; font-size:9px; line-height:1.55; }
+  @media (max-width:820px) { .layout { grid-template-columns:1fr; } }
+</style>
+
+<div class="intro">
+  <h2>A · 任务清单：Codex 使用 LobeHub 图标</h2>
+  <p class="subtitle">Codex 已替换为你指定的 LobeHub 图标资源，并在预览中固定为本地 SVG；Hermes 与 OpenClaw 继续使用各自项目标识。</p>
+</div>
+
+<div class="layout">
+  <div class="device">
+    <div class="status"><div class="status-left"><span class="dot"></span>4G　46ms　VPN ●</div><div class="status-right">电量 82%</div></div>
+    <div class="title-row"><div><div class="screen-title">现在需要你</div><div class="screen-sub">Agent 有 3 个事项等待处理</div></div><div><div class="count">3</div><div class="count-label">待处理</div></div></div>
+    <div class="need-card"><div class="brand-icon codex"><img src="assets/codex.svg" alt="LobeHub Codex 图标" /></div><div><div class="agent-name">Codex</div><div class="agent-desc">确认部署到生产环境 · 高风险</div></div><div class="time">现在</div><div class="arrow">›</div></div>
+    <div class="need-card"><div class="brand-icon hermes" aria-label="Hermes Agent 标识">☤</div><div><div class="agent-name">Hermes</div><div class="agent-desc">需要你澄清：是否保持向后兼容？</div><img class="wordmark" src="assets/hermes-banner.png" alt="Hermes Agent 官方字标" /></div><div class="time">2 分钟</div><div class="arrow">›</div></div>
+    <div class="need-card"><div class="brand-icon openclaw"><img src="assets/openclaw-pixel-lobster.svg" alt="OpenClaw 官方图标" /></div><div><div class="agent-name">OpenClaw</div><div class="agent-desc">研究任务已完成 · 可查看摘要</div></div><div class="time">5 分钟</div><div class="arrow">›</div></div>
+    <div class="bottom"><span>Agent <strong>6</strong></span><span>服务器 <strong>4</strong></span><span>A 查看　B 返回　FN 语音</span></div>
+  </div>
+
+  <div class="notes">
+    <h3>图标资产状态</h3>
+    <div class="source"><div class="brand-icon codex"><img src="assets/codex.svg" alt="LobeHub Codex 图标" /></div><div class="copy"><strong>Codex · LobeHub</strong><span>使用你指定页面对应的 Codex 静态 SVG；本地预览已不依赖 CDN。</span></div><span class="tag">已替换</span></div>
+    <div class="source"><div class="brand-icon hermes">☤</div><div class="copy"><strong>Hermes Agent</strong><span>保留官方项目的 ☤ 标识与 HERMES_AGENT 字标。</span></div><span class="tag">项目标识</span></div>
+    <div class="source"><div class="brand-icon openclaw"><img src="assets/openclaw-pixel-lobster.svg" alt="OpenClaw 官方图标" /></div><div class="copy"><strong>OpenClaw</strong><span>保留官方仓库的像素龙虾标识。</span></div><span class="tag">项目标识</span></div>
+    <div class="notice">软件正式接入时会锁定图标版本或提交哈希，并放入本地资源目录；联网只用于更新，不参与运行时显示。</div>
+  </div>
+</div>

@@ -1,0 +1,13 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.DS_Store
+.superpowers/
+native/build/
+native/dist-native/
+native/screenshots/
+native/dist-app/
+native/app/AHT/icon.png
+__pycache__/
+*.pyc
+a.o

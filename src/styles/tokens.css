@@ -1,0 +1,24 @@
+:root {
+  --device-width: 1024px;
+  --device-height: 768px;
+  --page-bg: #eef1f4;
+  --screen-bg: #080d13;
+  --ink: #f2f5f7;
+  --muted: #a2afb8;
+  --line: rgba(225, 233, 238, 0.18);
+  --glass: #171e26;
+  --glass-strong: #202932;
+  --orange: #ff9a3d;
+  --green: #79d6ad;
+  --blue: #94b8ff;
+  --red: #ff777e;
+  --purple: #b8a6ff;
+  --radius-card: 18px;
+  --radius-tile: 16px;
+  --icon-draw-size: 34px;
+  --device-border: #27343f;
+  --surface-card: #181f27;
+  --surface-card-hover: #1d2730;
+  --surface-tile: #ffffff;
+  --shadow-device: 0 28px 70px rgba(24, 35, 45, 0.24);
+}

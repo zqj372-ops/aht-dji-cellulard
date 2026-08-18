@@ -1,0 +1,29 @@
+{
+  "name": "aht-browser-simulator",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "gateway:dev": "node scripts/dev-gateway.mjs",
+    "demo": "node scripts/demo.mjs",
+    "device:push": "bash scripts/device-push.sh",
+    "build": "tsc -b && vite build",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@lobehub/icons": "file:vendor/lobehub-icons",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "7.0.1",
+    "@testing-library/react": "16.3.2",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.4",
+    "@vitejs/plugin-react": "6.0.5",
+    "jsdom": "29.0.0",
+    "typescript": "7.0.2",
+    "vite": "8.2.1",
+    "vitest": "4.1.10",
+    "ws": "8.21.3"
+  }
+}

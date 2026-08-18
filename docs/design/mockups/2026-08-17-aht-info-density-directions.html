@@ -1,0 +1,116 @@
+<style>
+  :root {
+    --ink: #eef3f5;
+    --muted: #91a0a7;
+    --line: rgba(255,255,255,.12);
+    --panel: rgba(255,255,255,.065);
+    --bg: #070a0f;
+    --orange: #ff9a3d;
+    --green: #66d69a;
+    --blue: #66a8ff;
+    --purple: #b88cff;
+  }
+  .direction-intro { margin-bottom: 26px; }
+  .direction-intro h2 { margin-bottom: 7px; }
+  .direction-intro .subtitle { max-width: 780px; }
+  .direction-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+  .direction { padding: 14px; border-radius: 18px; background: rgba(255,255,255,.025); border: 1px solid rgba(255,255,255,.11); cursor: pointer; transition: transform .2s ease, border-color .2s ease, background .2s ease; }
+  .direction:hover { transform: translateY(-3px); border-color: rgba(255,255,255,.28); }
+  .direction.selected { border-color: var(--orange); background: rgba(255,154,61,.08); box-shadow: 0 0 0 1px rgba(255,154,61,.2), 0 18px 60px rgba(0,0,0,.26); }
+  .direction-title { display:flex; justify-content:space-between; align-items:baseline; margin: 4px 2px 12px; }
+  .direction-title h3 { margin:0; font-size: 17px; }
+  .direction-title span { color: var(--muted); font-size: 12px; }
+  .device { aspect-ratio: 4 / 3; padding: 12px; border-radius: 13px; background: #0b1017; border: 5px solid #1f2730; box-shadow: inset 0 0 0 1px rgba(255,255,255,.07), 0 12px 28px rgba(0,0,0,.36); color: var(--ink); font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; overflow: hidden; }
+  .device * { box-sizing: border-box; }
+  .status { display:flex; align-items:center; justify-content:space-between; color:#b7c4cb; font-size: 8px; letter-spacing:.02em; margin-bottom: 13px; }
+  .status-left, .status-right { display:flex; gap: 7px; align-items:center; }
+  .dot { width: 5px; height:5px; border-radius:50%; display:inline-block; background:var(--green); box-shadow:0 0 8px currentColor; }
+  .dot.orange { background:var(--orange); color:var(--orange); }
+  .dot.blue { background:var(--blue); color:var(--blue); }
+  .screen-title { font-size: 16px; font-weight: 700; letter-spacing: -.03em; margin-bottom: 3px; }
+  .screen-sub { color:var(--muted); font-size: 8px; margin-bottom: 12px; }
+  .priority { display:flex; gap:8px; align-items:center; padding:9px; margin: 6px 0; border-radius: 9px; background:var(--panel); border:1px solid var(--line); }
+  .priority .mark { width:22px; height:22px; border-radius:7px; display:grid; place-items:center; font-size:10px; font-weight:700; background:rgba(255,154,61,.15); color:var(--orange); }
+  .priority.ok .mark { background:rgba(102,214,154,.14); color:var(--green); }
+  .priority .name { font-size:9px; font-weight:700; }
+  .priority .desc { margin-top:3px; color:var(--muted); font-size:7px; }
+  .priority .time { margin-left:auto; color:var(--muted); font-size:7px; align-self:flex-start; }
+  .bottom { display:flex; justify-content:space-between; margin-top:12px; padding-top:9px; border-top:1px solid var(--line); color:#9aa9b0; font-size:7px; }
+  .bottom strong { color:var(--ink); }
+  .dashboard .hero { display:flex; gap:10px; align-items:end; margin-bottom:12px; }
+  .dashboard .hero strong { font-size:25px; line-height:.9; letter-spacing:-.07em; }
+  .dashboard .hero span { color:var(--muted); font-size:8px; padding-bottom:2px; }
+  .mini-grid { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+  .mini-card { min-height:55px; padding:9px; border-radius:9px; background:var(--panel); border:1px solid var(--line); }
+  .mini-card .label { color:var(--muted); font-size:7px; }
+  .mini-card .value { margin-top:6px; font-size:12px; font-weight:700; }
+  .mini-card .value small { color:var(--muted); font-size:7px; font-weight:400; }
+  .agent-strip { margin-top:8px; display:flex; gap:6px; }
+  .agent-pill { flex:1; padding:6px 7px; border-radius:8px; background:rgba(102,168,255,.11); color:#b7d2ff; font-size:7px; }
+  .agent-pill.warn { background:rgba(255,154,61,.12); color:#ffd19f; }
+  .hud .status { margin-bottom:10px; }
+  .hud .screen-title { letter-spacing:.07em; font-size:12px; text-transform:uppercase; color:#c9d8e0; }
+  .hud .hud-line { display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line); padding:8px 0; }
+  .hud .hud-line:last-child { border-bottom:0; }
+  .hud .hud-line b { font-size:8px; font-weight:600; }
+  .hud .hud-line span { font-size:7px; color:var(--muted); }
+  .hud .meter { display:flex; gap:2px; margin-left:auto; margin-right:8px; }
+  .hud .meter i { display:block; width:5px; height:10px; border-radius:1px; background:#29343d; }
+  .hud .meter i.on { background:var(--blue); }
+  .hud .alert { margin-top:11px; padding:8px; border:1px solid rgba(255,154,61,.4); background:rgba(255,154,61,.08); color:#ffd8ae; font-size:7px; }
+  .direction-notes { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-top:12px; }
+  .direction-notes p { margin:0; color:var(--muted); font-size:12px; line-height:1.55; }
+  .direction-notes strong { color:var(--ink); }
+  @media (max-width: 900px) { .direction-grid, .direction-notes { grid-template-columns:1fr; } }
+</style>
+
+<div class="direction-intro">
+  <h2>先定中文界面的信息密度</h2>
+  <p class="subtitle">下面是同一台 4:3 掌机的三种方向。请优先看：拿起设备时，哪一种最容易在 3 秒内回答“现在谁需要我？”</p>
+</div>
+
+<div class="direction-grid" data-multiselect>
+  <div class="direction" data-choice="a-任务清单" onclick="toggleSelect(this)">
+    <div class="direction-title"><h3>A · 任务清单</h3><span>推荐</span></div>
+    <div class="device inbox">
+      <div class="status"><div class="status-left"><span class="dot orange"></span>4G　46ms</div><div class="status-right">VPN ●　82%</div></div>
+      <div class="screen-title">现在需要你</div>
+      <div class="screen-sub">3 个事项等待处理</div>
+      <div class="priority"><div class="mark">!</div><div><div class="name">Codex</div><div class="desc">确认部署到生产环境</div></div><div class="time">现在</div></div>
+      <div class="priority"><div class="mark">?</div><div><div class="name">Hermes</div><div class="desc">需要你澄清一个问题</div></div><div class="time">2 分钟</div></div>
+      <div class="priority ok"><div class="mark">✓</div><div><div class="name">OpenClaw</div><div class="desc">研究任务已完成</div></div><div class="time">5 分钟</div></div>
+      <div class="bottom"><span>Agent <strong>6</strong></span><span>服务器 <strong>4</strong></span><span>按 A 查看</span></div>
+    </div>
+  </div>
+
+  <div class="direction" data-choice="b-状态仪表盘" onclick="toggleSelect(this)">
+    <div class="direction-title"><h3>B · 状态仪表盘</h3><span>更从容</span></div>
+    <div class="device dashboard">
+      <div class="status"><div class="status-left"><span class="dot"></span>Wi-Fi　32ms</div><div class="status-right">直连　82%</div></div>
+      <div class="hero"><strong>3</strong><span>项待你处理</span></div>
+      <div class="mini-grid"><div class="mini-card"><div class="label">待处理</div><div class="value">2 <small>高优先级</small></div></div><div class="mini-card"><div class="label">运行中</div><div class="value">4 <small>Agent</small></div></div><div class="mini-card"><div class="label">服务器</div><div class="value">4 <small>全部在线</small></div></div><div class="mini-card"><div class="label">今日活动</div><div class="value">18 <small>事件</small></div></div></div>
+      <div class="agent-strip"><div class="agent-pill warn">Codex　等待确认</div><div class="agent-pill">Hermes　运行中</div></div>
+      <div class="bottom"><span>首页</span><span>Agent</span><span>服务器</span><span>终端</span></div>
+    </div>
+  </div>
+
+  <div class="direction" data-choice="c-工程终端" onclick="toggleSelect(this)">
+    <div class="direction-title"><h3>C · 工程终端</h3><span>更硬核</span></div>
+    <div class="device hud">
+      <div class="status"><div class="status-left"><span class="dot blue"></span>LTE / 46ms</div><div class="status-right">VPN ●　82%</div></div>
+      <div class="screen-title">AHT / 控制台</div>
+      <div class="screen-sub">统一 Agent 状态 · 东京节点</div>
+      <div class="hud-line"><div><b>CODEX</b><br><span>生产环境部署</span></div><div class="meter"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></div><span>待确认</span></div>
+      <div class="hud-line"><div><b>HERMES</b><br><span>兼容性问题</span></div><div class="meter"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></div><span>需输入</span></div>
+      <div class="hud-line"><div><b>TOKYO-01</b><br><span>CPU 28% · 磁盘 63%</span></div><div class="meter"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div><span>在线</span></div>
+      <div class="alert">! 高风险动作等待实体确认　A 长按 2 秒</div>
+      <div class="bottom"><span>↑↓ 选择</span><span>A 确认</span><span>B 返回</span><span>FN 语音</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="direction-notes">
+  <p><strong>A · 任务清单：</strong>最贴合“谁需要我”的核心，用户路径最短，适合作为 V0.1 首页。</p>
+  <p><strong>B · 状态仪表盘：</strong>整体压力更低，但需要多一步进入待处理事项，适合后续作为概览页。</p>
+  <p><strong>C · 工程终端：</strong>更像运维设备，状态表达强，但中文小屏阅读和新用户上手成本更高。</p>
+</div>
