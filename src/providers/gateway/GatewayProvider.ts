@@ -3,6 +3,7 @@ import type {
   CommandAck,
   DecisionCommand,
   DecisionLifecycle,
+  PairingState,
   ProviderAuthorization,
   ProviderEvent,
 } from '../types';
@@ -21,7 +22,11 @@ import {
   type GatewayClientKind,
   type GatewayCommandMessage,
   type GatewayHelloMessage,
+  type GatewayPairingBeginMessage,
+  type GatewayPairingConfirmMessage,
+  type GatewayPairingResultMessage,
   type GatewaySnapshot,
+  type GatewaySessionRevokedMessage,
 } from '../protocol';
 
 export interface WebSocketLike {
@@ -39,7 +44,7 @@ export interface GatewayProviderOptions {
   clientId?: string;
   deviceId?: string;
   clientKind?: GatewayClientKind;
-  auth?: GatewayAuth;
+  auth?: GatewayAuth | null;
   socketFactory?: (url: string) => WebSocketLike;
   reconnectDelaysMs?: number[];
   nowFn?: () => number;
@@ -62,7 +67,7 @@ export class GatewayProvider implements AhtProvider {
   private readonly clientId: string;
   private readonly deviceId: string;
   private readonly clientKind: GatewayClientKind;
-  private readonly auth: GatewayAuth;
+  private auth: GatewayAuth | null;
   private readonly socketFactory: (url: string) => WebSocketLike;
   private readonly reconnectDelaysMs: number[];
   private readonly nowFn: () => number;
@@ -82,6 +87,7 @@ export class GatewayProvider implements AhtProvider {
   private connectionState: ConnectionState = 'idle';
   private snapshotTrust: SnapshotTrust = createUnknownGatewaySnapshotTrust();
   private authorization: ProviderAuthorization;
+  private pairing: PairingState = { status: 'idle' };
   private seenMessageIds = new Set<string>();
 
   constructor(options: GatewayProviderOptions) {
@@ -89,7 +95,7 @@ export class GatewayProvider implements AhtProvider {
     this.clientId = options.clientId ?? 'aht-browser';
     this.deviceId = options.deviceId ?? 'aht-device';
     this.clientKind = options.clientKind ?? 'browser';
-    this.auth = options.auth ?? { mode: 'reference', credential_ref: 'reference:aht' };
+    this.auth = options.auth === undefined ? { mode: 'reference', credential_ref: 'reference:aht' } : options.auth;
     this.socketFactory = options.socketFactory ?? defaultSocketFactory;
     this.reconnectDelaysMs = options.reconnectDelaysMs ?? [250, 500, 1000, 2000, 5000];
     this.nowFn = options.nowFn ?? (() => Date.now());
@@ -102,6 +108,7 @@ export class GatewayProvider implements AhtProvider {
       principalId: null,
       tenantId: null,
       deviceId: this.deviceId,
+      expiresAt: null,
       permissionScope: [],
       reason: null,
     };
@@ -213,6 +220,61 @@ export class GatewayProvider implements AhtProvider {
     });
   }
 
+  beginPairing(): void {
+    if (this.authorization.status === 'authorized') {
+      this.emitPairing({ status: 'rejected', reason: 'already_paired' });
+      this.emit({ type: 'error', code: 'already_paired', message: '设备已完成配对，无需重复配对', retryable: false });
+      return;
+    }
+    if (this.pairing.status === 'challenge' || this.pairing.status === 'confirming' || this.pairing.status === 'paired') {
+      this.emitPairing(this.pairing);
+      this.emit({ type: 'error', code: 'pairing_in_progress', message: '配对流程进行中，请先完成或等待结果', retryable: false });
+      return;
+    }
+    if (!this.socket || this.socket.readyState !== 1) {
+      this.emitPairing({ status: 'rejected', reason: 'gateway_not_connected' });
+      this.emit({ type: 'error', code: 'gateway_not_connected', message: 'Gateway 未连接，无法开始配对', retryable: true });
+      return;
+    }
+    this.emitPairing({ status: 'begin_sent' });
+    const message: GatewayPairingBeginMessage = {
+      protocol: gatewayProtocol,
+      type: 'pairing_begin',
+      message_id: this.nextMessageId('pairing'),
+      client_id: this.clientId,
+      device_id: this.deviceId,
+      device_name: 'AHT Browser Simulator',
+    };
+    try {
+      this.socket.send(JSON.stringify(message));
+    } catch {
+      this.emitPairing({ status: 'rejected', reason: 'send_failed' });
+      this.emit({ type: 'error', code: 'send_failed', message: '配对请求发送失败', retryable: true });
+    }
+  }
+
+  confirmPairing(pairingId: string, code: string): void {
+    const current = this.pairing;
+    if (current.status !== 'challenge' || current.pairingId !== pairingId) {
+      this.emit({ type: 'error', code: 'invalid_message', message: '没有可确认的配对请求', retryable: false });
+      return;
+    }
+    this.emitPairing({ status: 'confirming' });
+    const message: GatewayPairingConfirmMessage = {
+      protocol: gatewayProtocol,
+      type: 'pairing_confirm',
+      message_id: this.nextMessageId('pairing'),
+      pairing_id: pairingId,
+      code,
+    };
+    try {
+      this.socket?.send(JSON.stringify(message));
+    } catch {
+      this.emitPairing({ status: 'rejected', reason: 'send_failed' });
+      this.emit({ type: 'error', code: 'send_failed', message: '配对确认发送失败', retryable: true });
+    }
+  }
+
   private openSocket(): void {
     if (!this.url) {
       this.emitConnection('error', 'gateway_url_missing');
@@ -279,6 +341,9 @@ export class GatewayProvider implements AhtProvider {
       case 'resync_required':
         this.requestResync(`resync_required:${message.reason}`);
         break;
+      case 'session_revoked':
+        this.handleSessionRevoked(message);
+        break;
       case 'error':
         if (message.code === 'unauthorized' || message.code === 'pairing_required') {
           this.emitConnection(message.code === 'pairing_required' ? 'pairing_required' : 'unauthorized', message.message);
@@ -287,7 +352,17 @@ export class GatewayProvider implements AhtProvider {
         this.emit({ type: 'error', code: message.code, message: message.message, retryable: message.retryable });
         break;
       case 'pairing_challenge':
+        this.pairing = {
+          status: 'challenge',
+          pairingId: message.pairing_id,
+          displayCode: message.display_code,
+          expiresAt: message.expires_at,
+        };
+        this.emitPairing(this.pairing);
+        break;
       case 'pairing_result':
+        this.handlePairingResult(message);
+        break;
       case 'pong':
         break;
     }
@@ -301,6 +376,7 @@ export class GatewayProvider implements AhtProvider {
       principalId: message.session.principal_id,
       tenantId: message.session.tenant_id,
       deviceId: message.session.device_id,
+      expiresAt: message.session.expires_at,
       permissionScope: [...authorization.permission_scope],
       reason: authorization.reason,
     };
@@ -311,6 +387,8 @@ export class GatewayProvider implements AhtProvider {
       return;
     }
     if (authorization.status === 'authorized') {
+      this.pairing = { status: 'idle' };
+      this.emitPairing(this.pairing);
       this.reconnectAttempt = 0;
       this.emitConnection('connected');
       return;
@@ -324,6 +402,45 @@ export class GatewayProvider implements AhtProvider {
       message: authorization.reason ?? (authorization.status === 'pairing_required' ? 'Gateway 需要完成设备配对' : 'Gateway 会话未授权'),
       retryable: false,
     });
+  }
+
+  private handlePairingResult(message: GatewayPairingResultMessage): void {
+    if (message.status === 'paired' && message.credential_ref) {
+      this.pairing = { status: 'paired', credentialRef: message.credential_ref };
+      this.auth = { mode: 'paired_session', credential_ref: message.credential_ref };
+      this.lastEventId = null;
+      this.gatewaySnapshot = null;
+      this.snapshotTrust = createUnknownGatewaySnapshotTrust('paired_session_establishing');
+      this.emitPairing(this.pairing);
+      this.emitConnection('connecting', 'paired_session_establishing');
+      this.sendHello();
+      return;
+    }
+    this.pairing = { status: 'rejected', reason: message.reason ?? 'pairing_rejected' };
+    this.emitPairing(this.pairing);
+    this.emitConnection('pairing_required', 'pairing_rejected');
+    this.emit({ type: 'error', code: 'pairing_required', message: message.reason ?? 'Gateway 拒绝了配对请求', retryable: true });
+  }
+
+  private handleSessionRevoked(message: GatewaySessionRevokedMessage): void {
+    if (this.auth?.mode === 'paired_session' && message.credential_ref === this.auth.credential_ref) {
+      this.authorization = {
+        ...this.authorization,
+        status: 'unauthorized',
+        sessionId: null,
+        principalId: null,
+        tenantId: null,
+        permissionScope: [],
+        reason: 'credential_revoked',
+      };
+      this.emit({ type: 'authorization', authorization: this.authorization });
+    }
+    this.pairing = { status: 'idle' };
+    this.emitPairing(this.pairing);
+    this.gatewaySnapshot = null;
+    this.snapshotTrust = markSnapshotTrustStale(this.snapshotTrust, 'credential_revoked');
+    this.emitConnection('unauthorized', 'credential_revoked');
+    this.emit({ type: 'error', code: 'unauthorized', message: '配对凭证已被吊销', retryable: false });
   }
 
   private handleSnapshot(snapshot: GatewaySnapshot): void {
@@ -464,7 +581,7 @@ export class GatewayProvider implements AhtProvider {
       client_id: this.clientId,
       device_id: this.deviceId,
       client_kind: this.clientKind,
-      auth: this.auth,
+      ...(this.auth ? { auth: this.auth } : {}),
       ...(this.lastEventId ? { resume_after: this.lastEventId } : {}),
     };
     try {
@@ -577,6 +694,10 @@ export class GatewayProvider implements AhtProvider {
   private emitConnection(state: ConnectionState, reason?: string): void {
     this.connectionState = state;
     this.emit({ type: 'connection', state, ...(reason ? { reason } : {}) });
+  }
+
+  private emitPairing(pairing: PairingState): void {
+    this.emit({ type: 'pairing', pairing });
   }
 
   private emitSnapshot(): void {

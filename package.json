@@ -1,14 +1,16 @@
 {
   "name": "aht-browser-simulator",
-  "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
     "gateway:dev": "node scripts/dev-gateway.mjs",
+    "demo": "node scripts/demo.mjs",
+    "device:push": "bash scripts/device-push.sh",
     "build": "tsc -b && vite build",
     "test": "vitest"
   },
   "dependencies": {
+    "@lobehub/icons": "file:vendor/lobehub-icons",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },

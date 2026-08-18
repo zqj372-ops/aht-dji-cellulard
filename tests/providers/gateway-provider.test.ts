@@ -85,6 +85,42 @@ afterEach(() => {
 });
 
 describe('GatewayProvider', () => {
+  test('carries the session expiry from hello_ack into authorization state', () => {
+    const events: ProviderEvent[] = [];
+    const provider = new GatewayProvider({
+      url: 'ws://gateway.test',
+      deviceId: 'device-01',
+      socketFactory: (url) => new FakeSocket(url),
+      nowFn: () => Date.parse('2026-08-18T03:00:01.000Z'),
+      reconnectDelaysMs: [0],
+    });
+    provider.subscribe((event) => events.push(event));
+    provider.connect();
+    const socket = FakeSocket.instances[0];
+    socket?.open();
+    socket?.receive({
+      protocol: 'aht.gateway.v1', type: 'hello_ack', message_id: 'msg-ack-expiry', connection_id: 'conn-1',
+      session: {
+        id: 'session-aht', principal_id: 'user-01', tenant_id: 'tenant-01',
+        device_id: 'device-01', expires_at: '2026-08-18T11:00:00.000Z',
+      },
+      authorization: { status: 'authorized', permission_scope: gatewaySnapshot.permission_scope, reason: null },
+      server_time: '2026-08-18T03:00:01.000Z', resume_supported: true, capabilities: ['needs_you:write'],
+    });
+    const authorizationEvent = events.find((event) => event.type === 'authorization');
+    expect(authorizationEvent).toEqual(expect.objectContaining({
+      type: 'authorization',
+      authorization: expect.objectContaining({
+        status: 'authorized',
+        sessionId: 'session-aht',
+        principalId: 'user-01',
+        tenantId: 'tenant-01',
+        deviceId: 'device-01',
+        expiresAt: '2026-08-18T11:00:00.000Z',
+      }),
+    }));
+  });
+
   test('sends hello, emits a snapshot, and resumes from the last event after reconnect', async () => {
     const events: ProviderEvent[] = [];
     const provider = new GatewayProvider({
@@ -390,6 +426,154 @@ describe('GatewayProvider', () => {
     expect(events.filter((event) => event.type === 'snapshot').at(-1)).toMatchObject({
       snapshot: { inbox: [expect.objectContaining({ id: 'remote-approval', status: 'pending' })] },
     });
+    provider.disconnect();
+  });
+
+  test('runs the full browser pairing flow to an authorized session', () => {
+    const events: ProviderEvent[] = [];
+    const provider = new GatewayProvider({
+      url: 'ws://gateway.test', clientId: 'test-client', deviceId: 'device-01',
+      socketFactory: (url) => new FakeSocket(url), reconnectDelaysMs: [],
+      nowFn: () => Date.parse('2026-08-18T03:00:01.000Z'),
+    });
+    provider.subscribe((event) => events.push(event));
+    provider.connect();
+    const socket = FakeSocket.instances[0];
+    socket?.open();
+    socket?.receive({
+      protocol: 'aht.gateway.v1', type: 'hello_ack', message_id: 'msg-pairing-ack', connection_id: 'conn-1',
+      session: { id: 'session-pairing', principal_id: null, tenant_id: null, device_id: 'device-01', expires_at: null },
+      authorization: { status: 'pairing_required', permission_scope: [], reason: 'credential_missing' },
+      server_time: '2026-08-18T03:00:01.000Z', resume_supported: true, capabilities: ['pairing'],
+    });
+
+    provider.beginPairing();
+    expect(JSON.parse(socket?.sent[1] ?? '{}')).toMatchObject({
+      type: 'pairing_begin', client_id: 'test-client', device_id: 'device-01',
+    });
+
+    socket?.receive({
+      protocol: 'aht.gateway.v1', type: 'pairing_challenge', message_id: 'msg-challenge',
+      pairing_id: 'pairing-1', expires_at: '2026-08-18T03:05:00.000Z', display_code: '000000',
+    });
+    expect(events).toContainEqual(expect.objectContaining({
+      type: 'pairing',
+      pairing: expect.objectContaining({ status: 'challenge', pairingId: 'pairing-1', displayCode: '000000' }),
+    }));
+
+    provider.confirmPairing('pairing-1', '000000');
+    expect(JSON.parse(socket?.sent[2] ?? '{}')).toMatchObject({
+      type: 'pairing_confirm', pairing_id: 'pairing-1', code: '000000',
+    });
+
+    socket?.receive({
+      protocol: 'aht.gateway.v1', type: 'pairing_result', message_id: 'msg-result',
+      pairing_id: 'pairing-1', status: 'paired', credential_ref: 'paired:device-01:000001', reason: null,
+    });
+    expect(JSON.parse(socket?.sent[3] ?? '{}')).toMatchObject({
+      type: 'hello',
+      auth: { mode: 'paired_session', credential_ref: 'paired:device-01:000001' },
+    });
+    expect(events).toContainEqual(expect.objectContaining({
+      type: 'pairing',
+      pairing: expect.objectContaining({ status: 'paired', credentialRef: 'paired:device-01:000001' }),
+    }));
+
+    socket?.receive({
+      protocol: 'aht.gateway.v1', type: 'hello_ack', message_id: 'msg-ack-authorized', connection_id: 'conn-2',
+      session: { id: 'session-aht', principal_id: 'user-01', tenant_id: 'tenant-01', device_id: 'device-01', expires_at: null },
+      authorization: { status: 'authorized', permission_scope: gatewaySnapshot.permission_scope, reason: null },
+      server_time: '2026-08-18T03:00:02.000Z', resume_supported: true, capabilities: ['needs_you:write'],
+    });
+    expect(events).toContainEqual(expect.objectContaining({ type: 'connection', state: 'connected' }));
+    expect(events.filter((event) => event.type === 'pairing').at(-1)).toEqual(
+      expect.objectContaining({ pairing: expect.objectContaining({ status: 'idle' }) }),
+    );
+    provider.disconnect();
+  });
+
+  test('keeps pairing_required when the gateway rejects the pairing result', () => {
+    const events: ProviderEvent[] = [];
+    const provider = new GatewayProvider({
+      url: 'ws://gateway.test', clientId: 'test-client', deviceId: 'device-01',
+      socketFactory: (url) => new FakeSocket(url), reconnectDelaysMs: [],
+    });
+    provider.subscribe((event) => events.push(event));
+    provider.connect();
+    const socket = FakeSocket.instances[0];
+    socket?.open();
+    socket?.receive({
+      protocol: 'aht.gateway.v1', type: 'hello_ack', message_id: 'msg-pairing-ack', connection_id: 'conn-1',
+      session: { id: 'session-pairing', principal_id: null, tenant_id: null, device_id: 'device-01', expires_at: null },
+      authorization: { status: 'pairing_required', permission_scope: [], reason: 'credential_missing' },
+      server_time: '2026-08-18T03:00:01.000Z', resume_supported: true, capabilities: ['pairing'],
+    });
+    provider.beginPairing();
+    socket?.receive({
+      protocol: 'aht.gateway.v1', type: 'pairing_challenge', message_id: 'msg-challenge',
+      pairing_id: 'pairing-2', expires_at: '2026-08-18T03:05:00.000Z', display_code: '000000',
+    });
+    provider.confirmPairing('pairing-2', '000000');
+    socket?.receive({
+      protocol: 'aht.gateway.v1', type: 'pairing_result', message_id: 'msg-result',
+      pairing_id: 'pairing-2', status: 'rejected', credential_ref: null, reason: 'pairing_code_invalid',
+    });
+
+    expect(events).toContainEqual(expect.objectContaining({
+      type: 'pairing',
+      pairing: expect.objectContaining({ status: 'rejected', reason: 'pairing_code_invalid' }),
+    }));
+    expect(events.filter((event) => event.type === 'connection').at(-1))
+      .toEqual(expect.objectContaining({ state: 'pairing_required' }));
+    provider.disconnect();
+  });
+
+  test('fails closed when the gateway revokes the active paired credential', () => {
+    const events: ProviderEvent[] = [];
+    const provider = new GatewayProvider({
+      url: 'ws://gateway.test', clientId: 'test-client', deviceId: 'device-01',
+      socketFactory: (url) => new FakeSocket(url), reconnectDelaysMs: [],
+      nowFn: () => Date.parse('2026-08-18T03:00:01.000Z'),
+    });
+    provider.subscribe((event) => events.push(event));
+    provider.connect();
+    const socket = FakeSocket.instances[0];
+    socket?.open();
+    socket?.receive({
+      protocol: 'aht.gateway.v1', type: 'hello_ack', message_id: 'msg-pairing-ack', connection_id: 'conn-1',
+      session: { id: 'session-pairing', principal_id: null, tenant_id: null, device_id: 'device-01', expires_at: null },
+      authorization: { status: 'pairing_required', permission_scope: [], reason: 'credential_missing' },
+      server_time: '2026-08-18T03:00:01.000Z', resume_supported: true, capabilities: ['pairing'],
+    });
+    provider.beginPairing();
+    socket?.receive({
+      protocol: 'aht.gateway.v1', type: 'pairing_challenge', message_id: 'msg-challenge',
+      pairing_id: 'pairing-3', expires_at: '2026-08-18T03:05:00.000Z', display_code: '000000',
+    });
+    provider.confirmPairing('pairing-3', '000000');
+    socket?.receive({
+      protocol: 'aht.gateway.v1', type: 'pairing_result', message_id: 'msg-result',
+      pairing_id: 'pairing-3', status: 'paired', credential_ref: 'paired:device-01:000003', reason: null,
+    });
+    socket?.receive({
+      protocol: 'aht.gateway.v1', type: 'hello_ack', message_id: 'msg-ack-authorized', connection_id: 'conn-2',
+      session: { id: 'session-aht', principal_id: 'user-01', tenant_id: 'tenant-01', device_id: 'device-01', expires_at: null },
+      authorization: { status: 'authorized', permission_scope: gatewaySnapshot.permission_scope, reason: null },
+      server_time: '2026-08-18T03:00:02.000Z', resume_supported: true, capabilities: ['needs_you:write'],
+    });
+    socket?.receive({ protocol: 'aht.gateway.v1', type: 'snapshot', message_id: 'msg-snapshot-1', event_id: 'evt-1', snapshot: gatewaySnapshot });
+
+    socket?.receive({
+      protocol: 'aht.gateway.v1', type: 'session_revoked', message_id: 'msg-revoked',
+      credential_ref: 'paired:device-01:000003', revoked_at: '2026-08-18T04:00:00.000Z', reason: null,
+    });
+
+    expect(events).toContainEqual(expect.objectContaining({
+      type: 'authorization',
+      authorization: expect.objectContaining({ status: 'unauthorized', reason: 'credential_revoked' }),
+    }));
+    expect(events).toContainEqual(expect.objectContaining({ type: 'connection', state: 'unauthorized' }));
+    expect(events).toContainEqual(expect.objectContaining({ type: 'error', code: 'unauthorized' }));
     provider.disconnect();
   });
 });

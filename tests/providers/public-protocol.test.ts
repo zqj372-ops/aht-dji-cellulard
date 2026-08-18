@@ -169,6 +169,20 @@ describe('aht.gateway.v1 public protocol', () => {
     })).toMatchObject({ type: 'pong', request_message_id: 'msg-ping' });
   });
 
+  test('parses session_revoke and session_revoked lifecycle messages', () => {
+    expect(parseGatewayClientMessage({
+      protocol: 'aht.gateway.v1', type: 'session_revoke', message_id: 'msg-revoke',
+      credential_ref: 'paired:device-01:000001',
+    })).toMatchObject({ type: 'session_revoke', credential_ref: 'paired:device-01:000001' });
+    expect(parseGatewayServerMessage({
+      protocol: 'aht.gateway.v1', type: 'session_revoked', message_id: 'msg-revoked',
+      credential_ref: 'paired:device-01:000001', revoked_at: '2026-08-18T03:00:00.000Z', reason: null,
+    })).toMatchObject({ type: 'session_revoked', credential_ref: 'paired:device-01:000001' });
+    expect(parseGatewayClientMessage({
+      protocol: 'aht.gateway.v1', type: 'session_revoke', message_id: 'msg-revoke-bad',
+    })).toEqual(expect.objectContaining({ type: 'protocol_error', code: 'invalid_message' }));
+  });
+
   test('rejects missing message ids, invalid timestamps and negative revisions', () => {
     expect(parseGatewayClientMessage({
       protocol: 'aht.gateway.v1', type: 'ping', sent_at: 'not-a-date',

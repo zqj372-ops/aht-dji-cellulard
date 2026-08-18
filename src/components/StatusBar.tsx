@@ -1,4 +1,5 @@
 import type { FixtureState } from '../app/types';
+import { GrokIcon } from './GrokIcon';
 
 interface StatusBarProps {
   network: FixtureState['network'];
@@ -10,6 +11,9 @@ export function StatusBar({ network, battery, display }: StatusBarProps) {
   return (
     <header className="status-bar" aria-label="设备状态">
       <div className="status-bar__left">
+        <span className="status-brand" data-testid="status-brand" aria-label="AHT 桌面图标（Grok）">
+          <GrokIcon size={30} />
+        </span>
         <span className="status-dot" aria-hidden="true" />
         <span>{network.link}</span>
         <span className="signal-bars" aria-label={`${network.signal} 格信号`}>

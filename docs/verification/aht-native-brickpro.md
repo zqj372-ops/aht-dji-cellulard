@@ -2,6 +2,12 @@
 
 日期：2026-08-18
 范围：把当前 AHT fixture 状态模型和五个页面做成 Brick Pro 原厂 MainUI 桌面可直接打开执行的原生 ARM64 小程序。
+
+> 状态更新（2026-08-18 13:25）：Grok 图标修订版已通过 `npm run device:push` 推送到
+> `/mnt/SDCARD/Apps/AHT`，拉回 SHA-256 全部一致（icon.png `5b55369f...`、二进制
+> `25a42d73...`）；重启 MainUI（pid 7169 → 7950）后 framebuffer 回读显示新版
+> glyph-dominant 图标，证据见文末“2026-08-18 更新”节。
+
 结论：已安装到 `/mnt/SDCARD/Apps/AHT`，MainUI 识别并展示 LobeHub Grok 桌面图标；从 Apps 标签页按 A 可启动，A/X/B、十字键、START 退出流程在真机上验证通过。原生层已内嵌 180 个 CJK 字形，首页/需要你/审批等中文标题、状态枚举和 Agent 内容均在真机屏幕直接渲染，不再显示方框；同时加入 AHT LOGO、状态栏图标和 7 个 Agent 图标。只写 SD 卡用户应用目录，未刷固件、未写 eMMC 或系统目录。
 
 ## 真机环境
@@ -147,3 +153,39 @@ screen=home pending=3 decision=已拒绝
 - 未 kill `trimui_osdd`、`trimui_scened` 等系统服务；MainUI 的退出/重启是官方 `runtrimui.sh` 应用启动通道的一部分。
 - 应用只渲染当前 fixture 状态，Gateway、SSH/Mosh、4G、麦克风和生产 Agent 连接均明确不可用。
 - 主机交叉编译成功不等于设备启动；本记录中的设备证据来自真实 ADB 连接、MainUI 日志、进程 fd 回读和 framebuffer 截图 OCR。
+
+## 2026-08-18 更新：Grok 图标改为官方包 import 并放大桌面标志
+
+用户反馈桌面图标未按 LobeHub 站点来。本轮将浏览器端改为真实 `import { Grok } from '@lobehub/icons'`
+（vendored 官方 1.94.0 包，见 [AHT Grok 桌面图标与品牌标记核验](aht-grok-desktop-icon.md)），
+并把 MainUI `icon.png` 重新构图：官方 Grok mark 缩放至 208px、白色圆角磁贴 252px，标志占比提升以贴近站点视觉。
+
+```text
+icon.png   sha256 5b55369f6f54e993c321ee1baafe8314e0ea08f2c3c850e1cace6578582ec95b（新）
+aht-native-arm64 sha256 25a42d7351a004499460872030b00efda86ea05346a236d929bab0b22532e637（本轮构建）
+```
+
+2026-08-18 13:21-13:25 真机收口：
+
+- `npm run device:push` 推送 5 个文件并逐文件拉回 SHA-256 比对，全部一致；
+  设备端 `icon.png` = `5b55369f6f54e993c321ee1baafe8314e0ea08f2c3c850e1cace6578582ec95b`，
+  `aht-native-arm64` = `25a42d7351a004499460872030b00efda86ea05346a236d929bab0b22532e637`。
+- `killall MainUI` 后官方 runtrimui 循环自动重启（pid 7169 → 7950），
+  `/dev/fb0` 双页抓帧（page0==page1，1024×768 BGRA）解码分析：
+
+```text
+桌面中心白色磁贴   357..666 / 229..538（310×310，圆角，选中态青色 13,139,115）
+黑色 Grok 图形     252×241（占磁贴 0.813 × 0.777）
+对比本地新图标     0.806 × 0.77（旧版 0.66）→ 屏幕显示即新版 glyph-dominant 构图
+```
+
+- 真机屏幕截图：
+  [aht-brickpro-new-icon-desktop.png](screens/aht-brickpro-new-icon-desktop.png)
+  （sha256 `a8481d74...`）、重启后
+  [aht-brickpro-new-icon-after-restart.png](screens/aht-brickpro-new-icon-after-restart.png)
+  （sha256 `cec3e075...`）、图标裁剪
+  [aht-brickpro-new-icon-crop.png](screens/aht-brickpro-new-icon-crop.png)
+  （sha256 `8c4cbb53...`）。
+- 同日主机复核：`npm test -- --run` 23 文件 / 71 用例全绿（含真实 WebSocket）；
+  `npm run build`、`make -C native test host-smoke arm64 uinput-pad app-package`、
+  `git diff --check` 均通过。

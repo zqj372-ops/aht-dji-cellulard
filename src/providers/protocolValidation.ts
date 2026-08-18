@@ -267,6 +267,7 @@ export function isGatewayErrorCode(value: unknown): value is GatewayProtocolErro
     || value === 'duplicate_command'
     || value === 'policy_denied'
     || value === 'resync_required'
+    || value === 'credential_not_found'
     || value === 'server_unavailable';
 }
 

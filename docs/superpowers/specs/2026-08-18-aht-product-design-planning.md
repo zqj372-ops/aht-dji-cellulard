@@ -1,6 +1,6 @@
 # AHT 产品设计规划
 
-状态：已按推荐方案确认，作为下一阶段产品与工程执行基线；P0 基线与公开协议 reference 闭环已完成，P1 可信连接基础正在执行
+状态：已按推荐方案确认，作为下一阶段产品与工程执行基线；P0 基线与公开协议 reference 闭环已完成，P1 可信连接基础正在执行（reference 级配对会话签发/吊销、UI 会话可信展示、只读页面来源一致性已收口）
 日期：2026-08-18
 
 设计稿归档：[docs/design/README.md](../../design/README.md)
@@ -28,8 +28,11 @@ AHT（AI Handheld Terminal）第一阶段不是通用聊天设备，也不是远
 | Gateway approval UI 闭环 | 已实现并验证 | 本地 reference Gateway 下，A/X 命令可读回事件确认 |
 | `aht.gateway.v1` 公开协议业务闭环 | 已实现并验证 | 严格 parser、授权/session/scope、snapshot/event revision、command precondition、ack/final event、幂等、resync、audit 和 reference WebSocket 回归 |
 | Reference Gateway 可恢复状态 | 已实现（reference 级） | 可选 JSON store 恢复 snapshot、event history、command ledger 和 audit；损坏 store fail closed，不等于生产持久化 |
+| 配对会话签发/吊销 | 已实现（reference 级） | `pairing_confirm` 签发每设备 `paired:*` credential；`paired_session` hello 带 `expires_at`；`session_revoke` 吊销后同一 credential 返回 `credential_revoked`；设备注册与吊销集合随 JSON store 重启留存 |
+| 会话上下文可信展示 | 已实现 | 页脚会话栏显示会话 ID、租户、主体、设备、权限 scope、过期时间与快照 event/revision/新鲜度；未授权、需要配对或上下文不完整时 fail closed，不充当成功会话 |
+| 只读页面来源一致性 | 已实现 | Agents / Servers / Needs You 统一显示 Fixture 或 Gateway authority 来源、快照版本与新鲜度；Gateway 模式下不再硬编码 FIXTURE/本地模拟 |
 | Brick Pro 原生 ARM64 层 | 已实现并有真机记录 | framebuffer、evdev、中文渲染、MainUI app 包和按键流程已有验证记录 |
-| LobeHub Grok MainUI 桌面图标 | 已实现并有真机记录 | 官方 Grok path 离线生成 PNG，设备 Apps `2/2` 页面实机回读 |
+| LobeHub Grok MainUI 桌面图标 | 已实现，真机回读完成 | 官方 `@lobehub/icons` import + 离线栅格化；`npm run device:push` 推送后 SHA-256 一致，重启 MainUI 后 framebuffer 回读新版 glyph-dominant 图标（见 [AHT Brick Pro 原生小程序验证记录](../verification/aht-native-brickpro.md)） |
 | Browser / Native 主体状态模型 | 已部分对齐 | 通过各自的 TypeScript/C++ 模型维护，尚未由单一 schema 生成 |
 
 ### 2.2 尚未交付的产品能力
@@ -37,7 +40,7 @@ AHT（AI Handheld Terminal）第一阶段不是通用聊天设备，也不是远
 | 能力 | 状态 | 产品影响 |
 | --- | --- | --- |
 | 生产 Gateway | 未交付 | 当前 reference harness 不能代表生产权威 |
-| 认证、设备配对、租户和权限 | 未交付 | 不能安全地开放真实审批 |
+| 认证、设备配对、租户和权限 | reference 级已实现，生产未交付 | 本地 harness 已可配对签发/吊销 reference 会话；真实 Auth/Pairing、租户隔离和长期凭据仍由生产服务提供 |
 | 生产持久化 snapshot、event store、审计 | 未交付 | 当前只有 reference 级本地 JSON store，尚无生产数据库、跨进程一致性和留存策略 |
 | Codex 生产 Adapter | 未交付 | 目前只有本地协议参考闭环 |
 | 真实 Agent 会话控制 | 未交付 | Agents 页先保持只读 |
@@ -303,7 +306,10 @@ permission_scope
 - 事件游标、断线恢复和数据新鲜度。
 - 只读 Agents、Servers、Needs You。
 
-当前证据：reference harness 已可选持久化 snapshot、event history、command ledger 和 audit 回读；生产 Auth、租户隔离、生产 store 与真实 Gateway 仍未完成。
+当前证据：reference harness 已可选持久化 snapshot、event history、command ledger 和 audit 回读；
+已收口配对会话签发/吊销（每设备 credential、TTL、吊销留存）；生产 Auth、租户隔离、生产 store 与真实 Gateway 仍未完成。
+UI 已收口会话上下文可信展示：页面可准确显示会话来源、权限范围和过期时间，未授权/需要配对/上下文不完整时决策锁定。
+只读页面（Agents / Servers / Needs You）已统一标注来源、快照版本与新鲜度，Gateway 模式下不会再出现 FIXTURE 硬编码。
 
 退出标准：用户能连接真实 Gateway，并准确判断来源、更新时间和权限范围。
 

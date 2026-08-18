@@ -54,13 +54,21 @@ class HarnessProvider implements AhtProvider {
     this.emit({ type: 'connection', state: 'connected' });
     this.emit({ type: 'authorization', authorization: {
       status: 'authorized', sessionId: 'session-aht', principalId: 'user-01', tenantId: 'tenant-01',
-      deviceId: 'device-01', permissionScope: trust.permissionScope, reason: null,
+      deviceId: 'device-01', expiresAt: null, permissionScope: trust.permissionScope, reason: null,
     } });
     this.emit({ type: 'snapshot', snapshot: gatewayState(), snapshotTrust: trust, eventId: 'evt-1', stale: false });
   }
 
   disconnect(): void {
     this.emit({ type: 'connection', state: 'disconnected', reason: 'test_cleanup' });
+  }
+
+  beginPairing(): void {
+    this.emit({ type: 'pairing', pairing: { status: 'rejected', reason: 'test_provider_does_not_pair' } });
+  }
+
+  confirmPairing(): void {
+    this.emit({ type: 'pairing', pairing: { status: 'rejected', reason: 'test_provider_does_not_pair' } });
   }
 
   decide(_command: DecisionCommand): Promise<CommandAck> {

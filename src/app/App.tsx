@@ -47,11 +47,11 @@ export function App() {
       decisionLifecycle={selectedInboxId ? runtime.decisionLifecycle[selectedInboxId] ?? null : null}
     />
   ) : currentScreen === 'needs' ? (
-    <NeedsYouScreen inbox={state.inbox} agents={state.agents} onOpen={openInboxItem} />
+    <NeedsYouScreen inbox={state.inbox} agents={state.agents} source={runtime.source} snapshotTrust={runtime.snapshotTrust} onOpen={openInboxItem} />
   ) : currentScreen === 'agents' ? (
-    <AgentsScreen agents={state.agents} />
+    <AgentsScreen agents={state.agents} source={runtime.source} snapshotTrust={runtime.snapshotTrust} />
   ) : currentScreen === 'servers' ? (
-    <ServersScreen servers={state.servers} />
+    <ServersScreen servers={state.servers} source={runtime.source} snapshotTrust={runtime.snapshotTrust} />
   ) : currentScreen === 'terminal' ? (
     <TerminalScreen />
   ) : (
@@ -67,7 +67,12 @@ export function App() {
       connection={runtime.connection}
       stale={runtime.stale}
       error={runtime.error}
+      authorization={runtime.authorization}
+      snapshotTrust={runtime.snapshotTrust}
+      pairing={runtime.pairing}
       onSourceChange={runtime.setSource}
+      onBeginPairing={runtime.beginPairing}
+      onConfirmPairing={runtime.confirmPairing}
     >
       {screen}
       <p className="fixture-note">

@@ -156,7 +156,9 @@ describe('reference Gateway public contract', () => {
     expect(challenge).toMatchObject({ type: 'pairing_challenge', display_code: '000000' });
     const pairingResultPromise = nextMessage(socket, (message) => message.type === 'pairing_result');
     send(socket, { type: 'pairing_confirm', message_id: 'pairing-confirm', pairing_id: challenge.pairing_id, code: '000000' });
-    expect(await pairingResultPromise).toMatchObject({ status: 'paired', credential_ref: 'reference:aht' });
+    const pairingResult = await pairingResultPromise;
+    expect(pairingResult).toMatchObject({ status: 'paired' });
+    expect(pairingResult.credential_ref).toMatch(/^paired:device-01:/);
 
     const pongPromise = nextMessage(socket, (message) => message.type === 'pong');
     send(socket, { type: 'ping', message_id: 'ping-1', sent_at: '2026-08-18T03:00:00.000Z' });
@@ -179,5 +181,117 @@ describe('reference Gateway public contract', () => {
     });
     await freshAckPromise;
     expect(await freshSnapshotPromise).toMatchObject({ type: 'snapshot', snapshot: { revision: 1 } });
+  });
+
+  test('issues an expiring paired session and revokes its credential', async () => {
+    const pairSocket = await openClient();
+    const challengePromise = nextMessage(pairSocket, (message) => message.type === 'pairing_challenge');
+    send(pairSocket, {
+      type: 'pairing_begin', message_id: 'pair-begin', client_id: 'native-1', device_id: 'device-02', device_name: 'AHT Brick Pro',
+    });
+    const challenge = await challengePromise;
+    const resultPromise = nextMessage(pairSocket, (message) => message.type === 'pairing_result');
+    send(pairSocket, {
+      type: 'pairing_confirm', message_id: 'pair-confirm', pairing_id: challenge.pairing_id, code: '000000',
+    });
+    const result = await resultPromise;
+    expect(result).toMatchObject({ status: 'paired' });
+    expect(result.credential_ref).toMatch(/^paired:device-02:/);
+
+    const client = await openClient();
+    const ackPromise = nextMessage(client, (message) => message.type === 'hello_ack');
+    const snapshotPromise = nextMessage(client, (message) => message.type === 'snapshot');
+    send(client, {
+      type: 'hello', message_id: 'paired-hello', client_id: 'native-1', device_id: 'device-02', client_kind: 'native',
+      auth: { mode: 'paired_session', credential_ref: result.credential_ref },
+    });
+    const ack = await ackPromise;
+    const snapshot = await snapshotPromise;
+    expect(ack).toMatchObject({
+      authorization: { status: 'authorized', permission_scope: expect.arrayContaining(['needs_you:write']) },
+      session: {
+        id: expect.stringMatching(/^sess-/), device_id: 'device-02',
+        principal_id: 'reference-user', tenant_id: 'reference-tenant',
+      },
+    });
+    expect(Date.parse(ack.session.expires_at)).toBeGreaterThan(Date.parse(ack.server_time));
+    expect(snapshot).toMatchObject({ type: 'snapshot' });
+
+    const command = {
+      type: 'command', message_id: 'paired-command', command_id: 'cmd-paired', command: 'approve',
+      target: { needs_you_id: 'codex-production-approval', agent_id: 'codex' },
+      precondition: { event_id: snapshot.event_id, revision: snapshot.snapshot.revision },
+    };
+    const commandAckPromise = nextMessage(client, (message) => message.type === 'command_ack' && message.command_id === 'cmd-paired');
+    const eventPromise = nextMessage(client, (message) => message.type === 'event' && message.audit?.command_id === 'cmd-paired');
+    send(client, command);
+    expect(await commandAckPromise).toMatchObject({ status: 'accepted', phase: 'pending_event' });
+    expect(await eventPromise).toMatchObject({ audit: { session_id: ack.session.id, device_id: 'device-02' } });
+
+    const revokedPromise = nextMessage(client, (message) => message.type === 'session_revoked');
+    send(client, { type: 'session_revoke', message_id: 'revoke-1', credential_ref: result.credential_ref });
+    expect(await revokedPromise).toMatchObject({ type: 'session_revoked', credential_ref: result.credential_ref });
+
+    const reuse = await openClient();
+    const reuseAckPromise = nextMessage(reuse, (message) => message.type === 'hello_ack');
+    send(reuse, {
+      type: 'hello', message_id: 'reuse-hello', client_id: 'native-1', device_id: 'device-02', client_kind: 'native',
+      auth: { mode: 'paired_session', credential_ref: result.credential_ref },
+    });
+    expect(await reuseAckPromise).toMatchObject({
+      authorization: { status: 'unauthorized', reason: 'credential_revoked', permission_scope: [] },
+    });
+  });
+
+  test('rejects unknown and expired paired credentials', async () => {
+    const unknown = await openClient();
+    const unknownAckPromise = nextMessage(unknown, (message) => message.type === 'hello_ack');
+    send(unknown, {
+      type: 'hello', message_id: 'unknown-hello', client_id: 'native-1', device_id: 'device-01', client_kind: 'native',
+      auth: { mode: 'paired_session', credential_ref: 'paired:device-01:not-issued' },
+    });
+    expect(await unknownAckPromise).toMatchObject({
+      authorization: { status: 'unauthorized', reason: 'credential_invalid', permission_scope: [] },
+    });
+
+    const expiredServer = new WebSocketServer({ host: '127.0.0.1', port: 0 });
+    await new Promise((resolve) => expiredServer.once('listening', resolve));
+    const expiredPort = expiredServer.address().port;
+    const expiredGateway = createReferenceGateway({
+      deviceId: 'device-01',
+      nowFn: () => Date.parse('2026-08-18T03:00:00.000Z'),
+      sessionTtlMs: 0,
+    });
+    expiredServer.on('connection', (socket) => expiredGateway.attach(socket));
+    const pairSocket = new WebSocket(`ws://127.0.0.1:${expiredPort}`);
+    clients.add(pairSocket);
+    await waitForOpen(pairSocket);
+    const challengePromise = nextMessage(pairSocket, (message) => message.type === 'pairing_challenge');
+    send(pairSocket, {
+      type: 'pairing_begin', message_id: 'expired-pair-begin', client_id: 'native-1', device_id: 'device-01', device_name: 'AHT Native',
+    });
+    const challenge = await challengePromise;
+    const resultPromise = nextMessage(pairSocket, (message) => message.type === 'pairing_result');
+    send(pairSocket, {
+      type: 'pairing_confirm', message_id: 'expired-pair-confirm', pairing_id: challenge.pairing_id, code: '000000',
+    });
+    const result = await resultPromise;
+    expect(result.credential_ref).toMatch(/^paired:device-01:/);
+
+    const expiredClient = new WebSocket(`ws://127.0.0.1:${expiredPort}`);
+    clients.add(expiredClient);
+    await waitForOpen(expiredClient);
+    const expiredAckPromise = nextMessage(expiredClient, (message) => message.type === 'hello_ack');
+    send(expiredClient, {
+      type: 'hello', message_id: 'expired-hello', client_id: 'native-1', device_id: 'device-01', client_kind: 'native',
+      auth: { mode: 'paired_session', credential_ref: result.credential_ref },
+    });
+    expect(await expiredAckPromise).toMatchObject({
+      authorization: { status: 'unauthorized', reason: 'session_expired', permission_scope: [] },
+    });
+    expiredServer.close();
+    pairSocket.close();
+    expiredClient.close();
+    await new Promise((resolve) => expiredServer.once('close', resolve));
   });
 });

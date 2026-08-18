@@ -1,22 +1,29 @@
 import type { ServerSnapshot } from '../app/types';
+import { ScreenSourceNote } from '../components/ScreenSourceNote';
+import type { DataSource, SnapshotTrust } from '../providers/types';
 
-interface ServersScreenProps { servers: ServerSnapshot[]; }
+interface ServersScreenProps {
+  servers: ServerSnapshot[];
+  source: DataSource;
+  snapshotTrust: SnapshotTrust;
+}
 
 function Metric({ label, value }: { label: string; value: string | number }) {
   return <div className="server-metric"><span>{label}</span><strong>{value}</strong></div>;
 }
 
-export function ServersScreen({ servers }: ServersScreenProps) {
+export function ServersScreen({ servers, source, snapshotTrust }: ServersScreenProps) {
   return (
     <section aria-labelledby="servers-heading">
       <div className="screen-heading screen-heading--compact">
-        <div><h1 id="servers-heading">Servers</h1><p>Agent 运行环境 · 本地模拟数据</p></div>
+        <div><h1 id="servers-heading">Servers</h1><p>Agent 运行环境 · 只读健康概览</p></div>
         <strong>{servers.length}</strong>
       </div>
+      <ScreenSourceNote source={source} snapshotTrust={snapshotTrust} readOnlyLabel="只读健康概览" />
       <div className="server-list">
         {servers.map((server) => (
           <article className="server-card" key={server.id}>
-            <div className="server-card__header"><div><h2>SERVER · {server.displayName}</h2><span className="online-label">● ONLINE</span></div><span className="fixture-tag">FIXTURE</span></div>
+            <div className="server-card__header"><div><h2>SERVER · {server.displayName}</h2><span className="online-label">● ONLINE</span></div></div>
             <div className="server-metrics">
               <Metric label="Ping" value={`${server.rtt}ms`} /><Metric label="CPU" value={`${server.cpu}%`} />
               <Metric label="RAM" value={`${server.ram}%`} /><Metric label="Disk" value={`${server.disk}%`} />

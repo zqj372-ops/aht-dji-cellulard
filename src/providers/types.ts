@@ -59,6 +59,7 @@ export interface ProviderAuthorization {
   principalId: string | null;
   tenantId: string | null;
   deviceId: string;
+  expiresAt: string | null;
   permissionScope: string[];
   reason: string | null;
 }
@@ -81,12 +82,21 @@ export interface DecisionLifecycle {
   finalEventId: string | null;
 }
 
+export type PairingState =
+  | { status: 'idle' }
+  | { status: 'begin_sent' }
+  | { status: 'challenge'; pairingId: string; displayCode: string; expiresAt: string }
+  | { status: 'confirming' }
+  | { status: 'paired'; credentialRef: string }
+  | { status: 'rejected'; reason: string | null };
+
 export type ProviderEvent =
   | { type: 'connection'; state: ConnectionState; reason?: string }
   | { type: 'authorization'; authorization: ProviderAuthorization }
   | { type: 'snapshot'; snapshot: FixtureState; snapshotTrust: SnapshotTrust; eventId?: string; stale?: boolean }
   | { type: 'command_ack'; ack: CommandAck }
   | { type: 'command_lifecycle'; lifecycle: DecisionLifecycle }
+  | { type: 'pairing'; pairing: PairingState }
   | { type: 'error'; code: string; message: string; retryable: boolean };
 
 export interface AhtProvider {
@@ -94,5 +104,7 @@ export interface AhtProvider {
   subscribe(listener: (event: ProviderEvent) => void): () => void;
   connect(): void;
   disconnect(): void;
+  beginPairing(): void;
+  confirmPairing(pairingId: string, code: string): void;
   decide(command: DecisionCommand): Promise<CommandAck>;
 }

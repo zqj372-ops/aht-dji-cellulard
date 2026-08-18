@@ -36,6 +36,7 @@ export type GatewayProtocolErrorCode =
   | 'duplicate_command'
   | 'policy_denied'
   | 'resync_required'
+  | 'credential_not_found'
   | 'server_unavailable';
 
 export interface GatewayEnvelope {
@@ -184,6 +185,11 @@ export interface GatewayPairingConfirmMessage extends GatewayEnvelope {
   code: string;
 }
 
+export interface GatewaySessionRevokeMessage extends GatewayEnvelope {
+  type: 'session_revoke';
+  credential_ref: string;
+}
+
 export type GatewayClientPairingMessage = GatewayPairingBeginMessage | GatewayPairingConfirmMessage;
 
 export interface GatewayPingMessage extends GatewayEnvelope {
@@ -191,7 +197,12 @@ export interface GatewayPingMessage extends GatewayEnvelope {
   sent_at: string;
 }
 
-export type GatewayClientMessage = GatewayHelloMessage | GatewayCommandMessage | GatewayClientPairingMessage | GatewayPingMessage;
+export type GatewayClientMessage =
+  | GatewayHelloMessage
+  | GatewayCommandMessage
+  | GatewayClientPairingMessage
+  | GatewaySessionRevokeMessage
+  | GatewayPingMessage;
 
 export type GatewayAuthorizationStatus = 'authorized' | 'pairing_required' | 'unauthorized';
 
@@ -287,8 +298,16 @@ export interface GatewayPairingResultMessage extends GatewayEnvelope {
   reason: string | null;
 }
 
+export interface GatewaySessionRevokedMessage extends GatewayEnvelope {
+  type: 'session_revoked';
+  credential_ref: string;
+  revoked_at: string;
+  reason: string | null;
+}
+
 export type GatewayServerPairingMessage = GatewayPairingChallengeMessage | GatewayPairingResultMessage;
 export type GatewayPairingMessage = GatewayClientPairingMessage | GatewayServerPairingMessage;
+export type GatewaySessionLifecycleMessage = GatewaySessionRevokeMessage | GatewaySessionRevokedMessage;
 
 export interface GatewayResyncRequiredMessage extends GatewayEnvelope {
   type: 'resync_required';
@@ -319,6 +338,7 @@ export type GatewayServerMessage =
   | GatewayEventMessage
   | GatewayCommandAckMessage
   | GatewayServerPairingMessage
+  | GatewaySessionRevokedMessage
   | GatewayResyncRequiredMessage
   | GatewayErrorMessage
   | GatewayPongMessage;
@@ -415,6 +435,13 @@ export function parseGatewayClientMessage(input: unknown): ParsedGatewayClientMe
     return input as unknown as GatewayPairingConfirmMessage;
   }
 
+  if (input.type === 'session_revoke') {
+    if (!isNonEmptyString(input.credential_ref)) {
+      return protocolError('invalid_message', 'Gateway session_revoke is incomplete', 'session_revoke');
+    }
+    return input as unknown as GatewaySessionRevokeMessage;
+  }
+
   if (input.type === 'ping') {
     if (!isIsoTimestamp(input.sent_at)) return protocolError('invalid_message', 'Gateway ping sent_at is invalid', 'sent_at');
     return input as unknown as GatewayPingMessage;
@@ -490,6 +517,15 @@ export function parseGatewayServerMessage(input: unknown): ParsedGatewayServerMe
       return protocolError('invalid_message', 'Gateway pairing_result is incomplete', 'pairing_result');
     }
     return input as unknown as GatewayPairingResultMessage;
+  }
+
+  if (input.type === 'session_revoked') {
+    if (!isNonEmptyString(input.credential_ref)
+      || !isIsoTimestamp(input.revoked_at)
+      || (input.reason !== null && !isNonEmptyString(input.reason))) {
+      return protocolError('invalid_message', 'Gateway session_revoked is incomplete', 'session_revoked');
+    }
+    return input as unknown as GatewaySessionRevokedMessage;
   }
 
   if (input.type === 'resync_required') {

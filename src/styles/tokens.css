@@ -1,19 +1,24 @@
 :root {
   --device-width: 1024px;
   --device-height: 768px;
-  --page-bg: #080a0f;
-  --screen-bg: #0a0f16;
-  --ink: #eef4f5;
-  --muted: #94a3aa;
-  --line: rgba(255, 255, 255, 0.12);
-  --glass: rgba(255, 255, 255, 0.065);
-  --glass-strong: rgba(255, 255, 255, 0.1);
+  --page-bg: #eef1f4;
+  --screen-bg: #080d13;
+  --ink: #f2f5f7;
+  --muted: #a2afb8;
+  --line: rgba(225, 233, 238, 0.18);
+  --glass: #171e26;
+  --glass-strong: #202932;
   --orange: #ff9a3d;
-  --green: #66d69a;
-  --blue: #8db5ff;
-  --red: #ff6f72;
+  --green: #79d6ad;
+  --blue: #94b8ff;
+  --red: #ff777e;
   --purple: #b8a6ff;
-  --radius-card: 14px;
-  --radius-tile: 11px;
-  --icon-draw-size: 24px;
+  --radius-card: 18px;
+  --radius-tile: 16px;
+  --icon-draw-size: 34px;
+  --device-border: #27343f;
+  --surface-card: #181f27;
+  --surface-card-hover: #1d2730;
+  --surface-tile: #ffffff;
+  --shadow-device: 0 28px 70px rgba(24, 35, 45, 0.24);
 }

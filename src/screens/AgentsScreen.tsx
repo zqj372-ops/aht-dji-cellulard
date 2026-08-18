@@ -1,20 +1,27 @@
 import type { Agent } from '../app/types';
 import { AgentIcon } from '../components/AgentIcon';
+import { ScreenSourceNote } from '../components/ScreenSourceNote';
+import type { DataSource, SnapshotTrust } from '../providers/types';
 
-interface AgentsScreenProps { agents: Agent[]; }
+interface AgentsScreenProps {
+  agents: Agent[];
+  source: DataSource;
+  snapshotTrust: SnapshotTrust;
+}
 
 const statusLabels: Record<Agent['status'], string> = {
   idle: '空闲', running: '运行中', waiting_input: '等待输入',
   waiting_approval: '等待批准', completed: '已完成', error: '错误', disconnected: '已断开',
 };
 
-export function AgentsScreen({ agents }: AgentsScreenProps) {
+export function AgentsScreen({ agents, source, snapshotTrust }: AgentsScreenProps) {
   return (
     <section aria-labelledby="agents-heading">
       <div className="screen-heading screen-heading--compact">
         <div><h1 id="agents-heading">Agents</h1><p>统一查看七个 Agent 的状态</p></div>
         <strong>{agents.length}</strong>
       </div>
+      <ScreenSourceNote source={source} snapshotTrust={snapshotTrust} readOnlyLabel="只读状态概览" />
       <div className="agent-list" aria-label="Agent 列表">
         {agents.map((agent) => (
           <article className="agent-row" key={agent.id}>

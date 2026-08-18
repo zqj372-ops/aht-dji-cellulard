@@ -1,13 +1,17 @@
 import type { Agent, InboxItem } from '../app/types';
 import { InboxCard } from '../components/InboxCard';
+import { ScreenSourceNote } from '../components/ScreenSourceNote';
+import type { DataSource, SnapshotTrust } from '../providers/types';
 
 interface NeedsYouScreenProps {
   inbox: InboxItem[];
   agents: Agent[];
+  source: DataSource;
+  snapshotTrust: SnapshotTrust;
   onOpen: (itemId: string) => void;
 }
 
-export function NeedsYouScreen({ inbox, agents, onOpen }: NeedsYouScreenProps) {
+export function NeedsYouScreen({ inbox, agents, source, snapshotTrust, onOpen }: NeedsYouScreenProps) {
   const agentById = new Map(agents.map((agent) => [agent.id, agent]));
   return (
     <section aria-labelledby="needs-heading">
@@ -18,6 +22,7 @@ export function NeedsYouScreen({ inbox, agents, onOpen }: NeedsYouScreenProps) {
         </div>
         <strong>{inbox.filter((item) => item.status === 'pending').length}</strong>
       </div>
+      <ScreenSourceNote source={source} snapshotTrust={snapshotTrust} readOnlyLabel="只读事项列表，操作在详情页" />
       <div className="inbox-list" aria-label="Agent Inbox 列表">
         {inbox.map((item) => {
           const agent = agentById.get(item.agentId);

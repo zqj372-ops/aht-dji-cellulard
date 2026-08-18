@@ -21,6 +21,20 @@ export class FixtureProvider implements AhtProvider {
     this.emit({ type: 'connection', state: 'disconnected', reason: 'fixture_stopped' });
   }
 
+  beginPairing(): void {
+    this.emit({
+      type: 'pairing',
+      pairing: { status: 'rejected', reason: 'fixture_does_not_support_pairing' },
+    });
+  }
+
+  confirmPairing(_pairingId: string, _code: string): void {
+    this.emit({
+      type: 'pairing',
+      pairing: { status: 'rejected', reason: 'fixture_does_not_support_pairing' },
+    });
+  }
+
   async decide(command: DecisionCommand): Promise<CommandAck> {
     const commandId = `fixture-${command.itemId}`;
     this.emit({ type: 'command_lifecycle', lifecycle: {

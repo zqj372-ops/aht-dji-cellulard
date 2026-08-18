@@ -17,6 +17,7 @@ import type {
   DecisionCommand,
   DecisionGate,
   DecisionLifecycle,
+  PairingState,
   ProviderAuthorization,
   SnapshotTrust,
 } from '../providers/types';
@@ -44,8 +45,11 @@ export interface AhtRuntime {
   decisionGate: DecisionGate;
   authorization: ProviderAuthorization;
   decisionLifecycle: Record<string, DecisionLifecycle>;
+  pairing: PairingState;
   setSource: (source: DataSource) => void;
   decide: (command: DecisionCommand) => Promise<CommandAck>;
+  beginPairing: () => void;
+  confirmPairing: (pairingId: string, code: string) => void;
 }
 
 export function useAhtRuntime(options: AhtRuntimeOptions = {}): AhtRuntime {
@@ -68,10 +72,12 @@ export function useAhtRuntime(options: AhtRuntimeOptions = {}): AhtRuntime {
     principalId: initialSource === 'fixture' ? 'fixture-user' : null,
     tenantId: initialSource === 'fixture' ? 'fixture-tenant' : null,
     deviceId: gatewayDeviceId,
+    expiresAt: null,
     permissionScope: initialSource === 'fixture' ? ['development:fixture', 'needs_you:write'] : [],
     reason: null,
   });
   const [decisionLifecycle, setDecisionLifecycle] = useState<Record<string, DecisionLifecycle>>({});
+  const [pairing, setPairing] = useState<PairingState>({ status: 'idle' });
   const provider = useMemo<AhtProvider>(
     () => source === 'fixture' ? fixtureProviderFactory() : gatewayProviderFactory(),
     [fixtureProviderFactory, gatewayProviderFactory, source],
@@ -83,12 +89,14 @@ export function useAhtRuntime(options: AhtRuntimeOptions = {}): AhtRuntime {
     setStale(false);
     setError(null);
     setDecisionLifecycle({});
+    setPairing({ status: 'idle' });
     setAuthorization({
       status: source === 'fixture' ? 'authorized' : 'unauthorized',
       sessionId: source === 'fixture' ? 'fixture-session' : null,
       principalId: source === 'fixture' ? 'fixture-user' : null,
       tenantId: source === 'fixture' ? 'fixture-tenant' : null,
       deviceId: gatewayDeviceId,
+      expiresAt: null,
       permissionScope: source === 'fixture' ? ['development:fixture', 'needs_you:write'] : [],
       reason: null,
     });
@@ -152,8 +160,14 @@ export function useAhtRuntime(options: AhtRuntimeOptions = {}): AhtRuntime {
         }
         return;
       }
+      if (event.type === 'pairing') {
+        setPairing(event.pairing);
+        return;
+      }
       if (event.type === 'error') {
-        setConnection('error');
+        if (event.code !== 'pairing_required' && event.code !== 'unauthorized') {
+          setConnection('error');
+        }
         setError(event.message);
         if (source === 'gateway') {
           setSnapshotTrust((current) => markSnapshotTrustStale(current, event.code));
@@ -169,11 +183,14 @@ export function useAhtRuntime(options: AhtRuntimeOptions = {}): AhtRuntime {
   }, [provider, source]);
 
   const decide = useCallback((command: DecisionCommand) => provider.decide(command), [provider]);
+  const beginPairing = useCallback(() => provider.beginPairing(), [provider]);
+  const confirmPairing = useCallback((pairingId: string, code: string) => provider.confirmPairing(pairingId, code), [provider]);
   const decisionGate = useMemo(
     () => getDecisionGate(source, connection, snapshotTrust),
     [connection, snapshotTrust, source],
   );
   return {
-    source, connection, state, stale, error, snapshotTrust, decisionGate, authorization, decisionLifecycle, setSource, decide,
+    source, connection, state, stale, error, snapshotTrust, decisionGate, authorization, decisionLifecycle, pairing,
+    setSource, decide, beginPairing, confirmPairing,
   };
 }

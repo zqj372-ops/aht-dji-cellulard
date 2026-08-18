@@ -5,8 +5,7 @@ export function nextGatewayEventId() {
   return `evt-${eventSequence}`;
 }
 
-export function createGatewaySnapshot({ deviceId = 'device-01' } = {}) {
-  const generatedAt = new Date().toISOString();
+export function createGatewaySnapshot({ deviceId = 'device-01', generatedAt = new Date().toISOString() } = {}) {
   return {
     source: 'gateway',
     schema_version: 1,

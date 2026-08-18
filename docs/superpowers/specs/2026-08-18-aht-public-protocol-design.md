@@ -93,6 +93,28 @@ interface GatewayHelloAckMessage extends GatewayEnvelope {
 
 配对只公开引用和结果，不传递长期 secret：`pairing_begin → pairing_challenge → pairing_confirm → pairing_result`。reference Gateway 可以使用固定的 reference credential 完成 authorized session；生产实现必须由 Auth/Pairing 服务签发 session 和 scope。
 
+reference Gateway 的配对成功会签发每设备 `paired:<device_id>:<seq>` credential reference，客户端随后用
+`paired_session` 模式完成 authorized session；session 携带 `expires_at`（reference TTL 默认 8 小时，
+可通过 `sessionTtlMs` 配置）。已签发凭证可显式吊销：
+
+```ts
+interface GatewaySessionRevokeMessage extends GatewayEnvelope {
+  type: 'session_revoke';
+  credential_ref: string;
+}
+
+interface GatewaySessionRevokedMessage extends GatewayEnvelope {
+  type: 'session_revoked';
+  credential_ref: string;
+  revoked_at: string; // ISO timestamp
+  reason: string | null;
+}
+```
+
+吊销后同一 credential 的后续 hello 返回 `unauthorized + credential_revoked`；已过期会话返回
+`unauthorized + session_expired`。reference Gateway 会把设备注册和吊销集合写入 JSON store，重启后依然生效；
+长期凭据管理和吊销分发仍属于生产 Auth/Pairing 服务，不由本地 reference 冒充。
+
 ### 4.2 状态基线
 
 ```ts
@@ -191,7 +213,8 @@ interface GatewayCommandAckMessage extends GatewayEnvelope {
 - `ping/pong` 只维护传输活性，不改变业务 freshness；freshness 仍由 snapshot/event 的 `generated_at` 判断。
 - parser 对未知消息、缺字段、错误 union、非法时间、无效 scope、事件 revision 回退和 command target 缺失都返回 typed protocol error，不抛到 React render。
 
-稳定错误 code 至少包括：`invalid_message`、`invalid_protocol`、`unknown_type`、`invalid_snapshot`、`invalid_event`、`unauthorized`、`pairing_required`、`permission_denied`、`stale_target`、`invalid_target`、`action_not_allowed`、`duplicate_command`、`policy_denied`、`resync_required`、`server_unavailable`。
+稳定错误 code 至少包括：`invalid_message`、`invalid_protocol`、`unknown_type`、`invalid_snapshot`、`invalid_event`、`unauthorized`、`pairing_required`、`permission_denied`、`stale_target`、`invalid_target`、`action_not_allowed`、`duplicate_command`、`policy_denied`、`resync_required`、`credential_not_found`、`server_unavailable`。
+`unauthorized` 的稳定 reason 包括 `credential_invalid`、`credential_revoked`、`session_expired`、`device_mismatch`。
 
 ## 5. 客户端业务状态机
 
@@ -232,6 +255,7 @@ reference Gateway 实现内存版 session/permission/policy/idempotency/audit/ev
 5. duplicate command 读回原结果；
 6. stale target、只读 scope、未授权和 resync；
 7. resume cursor 和受控事件重放。
+8. 配对签发每设备 credential、TTL 会话、显式 `session_revoke` 吊销，以及重启后设备注册与吊销集合留存。
 
 真实 Gateway 只需实现同一 wire contract；真实 Codex Adapter 负责把 Codex 的人工决策请求映射为 `needs_you_created`，把 command 映射为 Codex action，并用最终 Adapter 结果发出 `needs_you_resolved`。在该 Adapter 接入前，页面必须继续显示 reference/developer preview，不得显示 production ready。
 

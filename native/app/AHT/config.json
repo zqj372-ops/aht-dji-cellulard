@@ -1,0 +1,9 @@
+{
+  "label": "AHT",
+  "label.ch.lang": "AHT 智能终端",
+  "icon": "",
+  "icontop": "icon.png",
+  "launch": "launch.sh",
+  "description": "AHT local-first AI operations terminal",
+  "description.ch.lang": "AHT 本地优先 AI 运营终端"
+}

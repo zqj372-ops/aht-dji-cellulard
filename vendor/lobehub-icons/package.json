@@ -1,0 +1,17 @@
+{
+  "name": "@lobehub/icons",
+  "version": "1.94.0",
+  "description": "Vendored official LobeHub Icons (Grok entry) for offline builds",
+  "license": "MIT",
+  "type": "module",
+  "main": "./index.js",
+  "module": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.js"
+    }
+  },
+  "sideEffects": false
+}

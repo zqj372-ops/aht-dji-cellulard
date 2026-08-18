@@ -15,7 +15,7 @@
 | 参考显示 | `1024 × 768` · `60 Hz` · `0°` · `32 bit` |
 | 帧缓冲 | stride `4096 bytes`；虚拟 `1024 × 16384` 仅多缓冲，不作布局 |
 | 面板配置标识 | `gh7003`（运行时以 ioctl readback 为准） |
-| 图标来源 | LobeHub Icons `@lobehub/icons-static-svg@1.94.0`，本地随包发布 |
+| 图标来源 | LobeHub Icons `@lobehub/icons@1.94.0`（vendored 官方 MIT 包，`import { Grok } from '@lobehub/icons'`）；品牌标记/桌面图标为官方 `Grok` Mono |
 | 图标底色 | 全部白底、同一容器、同一绘制尺寸 |
 | Codex | 使用蓝白品牌色变体 |
 | DeepSeek Harness | 支持，显示 `dsh` Developer Preview |
