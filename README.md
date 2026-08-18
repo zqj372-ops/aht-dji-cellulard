@@ -121,9 +121,8 @@ npm run demo
 - `docs/`：设计稿、产品/协议设计与验证记录
 - `vendor/lobehub-icons/`：仓库内 vendored 的 LobeHub Icons 官方 MIT 包，离线安装依赖
 
-硬件侧的 DJI 蜂窝模块用户态驱动与网络管理在独立仓库
-[`aht-dji-cellulard`](https://github.com/zqj372-ops/aht-dji-cellulard)；
-本仓库只负责 AHT 客户端 UI、状态模型和 Gateway 协议边界，不重复实现设备驱动。
+硬件侧的 DJI 蜂窝模块用户态驱动与网络管理在同一个 AHT 项目内按模块维护；
+本仓库内容负责 AHT 客户端 UI、状态模型和 Gateway 协议边界，不重复实现设备驱动。
 
 ## 验证
 
