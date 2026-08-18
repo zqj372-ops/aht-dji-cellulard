@@ -1,0 +1,69 @@
+# module and kernel driver environment
+--- /proc/modules ---
+xradio_wlan 1050 0 - Live 0xffffff8000abd000
+xradio_core 525801 1 xradio_wlan, Live 0xffffff8000a19000
+xt_time 2307 0 - Live 0xffffff8000a15000
+xt_multiport 1847 0 - Live 0xffffff8000a11000
+xt_mark 1398 0 - Live 0xffffff8000a0d000
+xt_mac 1236 0 - Live 0xffffff8000a09000
+xt_limit 2265 0 - Live 0xffffff8000a05000
+xt_comment 1116 0 - Live 0xffffff8000a01000
+xt_TCPMSS 2753 0 - Live 0xffffff80009fd000
+xt_LOG 1467 0 - Live 0xffffff80009f9000
+xradio_mac 193983 1 xradio_core, Live 0xffffff80009b8000
+iptable_filter 1514 0 - Live 0xffffff80009b4000
+ipt_REJECT 1646 0 - Live 0xffffff80009b0000
+vin_v4l2 208108 0 - Live 0xffffff8000967000
+ov5648_mipi 8328 0 - Live 0xffffff8000960000
+vin_io 41344 2 vin_v4l2,ov5648_mipi, Live 0xffffff800094d000
+videobuf2_dma_contig 10195 1 vin_v4l2, Live 0xffffff8000946000
+dc_sunxi 6447 0 - Live 0xffffff8000934000 (O)
+pvrsrvkm 1282278 3 dc_sunxi, Live 0xffffff80007a0000 (O)
+--- /lib/modules ---
+drwxr-xr-x    3 root     root          4096 Jul 17 17:06 .
+drwxr-xr-x   12 root     root          4096 Jul 17 17:06 ..
+drwxr-xr-x    2 root     root          4096 Jul 17 17:06 4.9.191
+/lib/modules/4.9.191/actuator.ko
+/lib/modules/4.9.191/dc_sunxi.ko
+/lib/modules/4.9.191/dw9714_act.ko
+/lib/modules/4.9.191/gc2590_mipi.ko
+/lib/modules/4.9.191/ipt_REJECT.ko
+/lib/modules/4.9.191/iptable_filter.ko
+/lib/modules/4.9.191/ov5648_mipi.ko
+/lib/modules/4.9.191/pvrsrvkm.ko
+/lib/modules/4.9.191/videobuf2-dma-contig.ko
+/lib/modules/4.9.191/vin_io.ko
+/lib/modules/4.9.191/vin_v4l2.ko
+/lib/modules/4.9.191/xradio_core.ko
+/lib/modules/4.9.191/xradio_mac.ko
+/lib/modules/4.9.191/xradio_wlan.ko
+/lib/modules/4.9.191/xt_LOG.ko
+/lib/modules/4.9.191/xt_TCPMSS.ko
+/lib/modules/4.9.191/xt_comment.ko
+/lib/modules/4.9.191/xt_limit.ko
+/lib/modules/4.9.191/xt_mac.ko
+/lib/modules/4.9.191/xt_mark.ko
+/lib/modules/4.9.191/xt_multiport.ko
+/lib/modules/4.9.191/xt_time.ko
+--- loader tools ---
+insmod=/usr/sbin/insmod
+modprobe=/usr/sbin/modprobe
+depmod=--- relevant config ---
+CONFIG_LOCALVERSION=""
+# CONFIG_LOCALVERSION_AUTO is not set
+CONFIG_MODULES_USE_ELF_RELA=y
+CONFIG_MODULES=y
+# CONFIG_MODVERSIONS is not set
+CONFIG_USB_NET_DRIVERS=y
+# CONFIG_USB_USBNET is not set
+# CONFIG_USB_NET_RNDIS_WLAN is not set
+# CONFIG_USB_SERIAL_OPTION is not set
+--- relevant driver nodes ---
+MISSING:/sys/bus/usb/drivers/usbnet
+MISSING:/sys/bus/usb/drivers/cdc_ether
+MISSING:/sys/bus/usb/drivers/cdc_ncm
+MISSING:/sys/bus/usb/drivers/rndis_host
+MISSING:/sys/bus/usb/drivers/qmi_wwan
+MISSING:/sys/bus/usb-serial/drivers/option1
+
+# adb_exit=0

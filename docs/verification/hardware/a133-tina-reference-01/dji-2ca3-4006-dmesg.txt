@@ -1,0 +1,429 @@
+# recent kernel log after DJI USB attach
+[ 2224.842364] Invalid sched_group_energy for Cluster3
+[ 2224.842367] Invalid sched_group_energy for CPU2
+[ 2224.842371] Invalid sched_group_energy for Cluster2
+[ 2224.842374] Invalid sched_group_energy for CPU1
+[ 2224.842377] Invalid sched_group_energy for Cluster1
+[ 2224.842381] Invalid sched_group_energy for CPU0
+[ 2224.842384] Invalid sched_group_energy for Cluster0
+[ 2224.842751] Invalid sched_group_energy for CPU3
+[ 2224.842755] Invalid sched_group_energy for Cluster3
+[ 2224.842758] Invalid sched_group_energy for CPU2
+[ 2224.842762] Invalid sched_group_energy for Cluster2
+[ 2224.842765] Invalid sched_group_energy for CPU1
+[ 2224.842768] Invalid sched_group_energy for Cluster1
+[ 2224.842771] Invalid sched_group_energy for CPU0
+[ 2224.842775] Invalid sched_group_energy for Cluster0
+[ 2224.842893] CPU3 is up
+[ 2224.845303] PM: noirq resume of devices complete after 2.189 msecs
+[ 2224.847887] PM: early resume of devices complete after 1.780 msecs
+[ 2224.848229] [ehci0-controller]: is disable, can not resume
+[ 2224.848232] [ehci1-controller]super resume
+[ 2224.848260] [ohci0-controller]: is disable, can not resume
+[ 2224.848262] [ohci1-controller]super resume
+[ 2224.848278] [cedar] standby resume
+[ 2224.848476] usb usb1: root hub lost power or was reset
+[ 2224.848772] [DISP] lcd_clk_config,line:663:
+[ 2224.848773] disp 0, clk: pll(342000000),clk(342000000),dclk(57000000) dsi_rate(57000000)
+[ 2224.848773]      clk real:pll(336000000),clk(336000000),dclk(84000000) dsi_rate(150000000)
+[ 2224.850456] sw_uart_resume()2455 - uart0 resume. DLH: 0, DLL: 13.
+[ 2224.850563] sw_uart_resume()2455 - uart1 resume. DLH: 0, DLL: 1.
+[ 2224.850913] android_work: sent uevent USB_STATE=DISCONNECTED
+[ 2224.852996] sunxi-mmc sdc1: dat3_imask 0
+[ 2224.853026] G2D: g2d_resume.
+[ 2224.853045] G2D: g2d_resume succesfully.
+[ 2224.853133] [XR_BT_LPM] bluesleep_resume:
+[ 2224.853541] sunxi_codec_resume  speaker:0
+[ 2224.875087] Suspended for 64.573 seconds
+[ 2224.875533] [PM_WRN] xradio_wow_resume num_vifs=0
+[ 2224.875580] [XRADIO] xradio_restart_work
+[ 2224.875588] [XRADIO] xradio_core_reinit 1078!
+[ 2224.910232] usb usb2: root hub lost power or was reset
+[ 2224.926643] [XRADIO] Remove SDIO card 1
+[ 2224.934245] spk status mute, skip SPK PA
+[ 2225.070543] android_work: sent uevent USB_STATE=CONNECTED
+[ 2225.077136] configfs-gadget gadget: high-speed config #1: c
+[ 2225.077292] android_work: sent uevent USB_STATE=CONFIGURED
+[ 2225.130208] jd9168:lcd panel init
+[ 2225.642216] sunxi_ledc_complete()1219 - led xfer timeout
+[ 2225.778537] disp_resume finish
+[ 2225.778566] PM: resume of devices complete after 930.663 msecs
+[ 2226.354845] PM: Finishing wakeup.
+[ 2226.358567] Restarting tasks ... done.
+[ 2226.366650] sunxi-mmc sdc1: smc 2 p1 err, cmd 7, RTO !!
+[ 2226.372609] sunxi-mmc sdc1: smc 2 p1 err, cmd 7, RTO !!
+[ 2226.379342] PM: suspend exit 1970-01-18 02:17:16.504266375 UTC
+[ 2226.380071] sunxi-mmc sdc1: smc 2 p1 err, cmd 7, RTO !!
+[ 2226.380105] sunxi-mmc sdc1: smc 2 p1 err, cmd 7, RTO !!
+[ 2226.380471] mmc2: card 0001 removed
+[ 2226.380646] sunxi-mmc sdc1: sdc set ios:clk 0Hz bm PP pm OFF vdd 0 width 1 timing LEGACY(SDR12) dt B
+[ 2226.381732] sunxi-mmc sdc1: sdc set ios:clk 0Hz bm PP pm UP vdd 21 width 1 timing LEGACY(SDR12) dt B
+[ 2226.381813] sunxi-mmc sdc1: no vqmmc,Check if there is regulator
+[ 2226.385255] speaker force mute:0
+[ 2226.398268] sunxi-wlan soc@03000000:wlan@0: bus_index: 1
+[ 2226.402310] sunxi-mmc sdc1: sdc set ios:clk 400000Hz bm PP pm ON vdd 21 width 1 timing LEGACY(SDR12) dt B
+[ 2226.402937] sunxi-wlan soc@03000000:wlan@0: check wlan wlan_power voltage: 3300000
+[ 2226.404930] sunxi-wlan soc@03000000:wlan@0: check wlan io_regulator voltage: 3300000
+[ 2226.426896] sunxi-mmc sdc1: sdc set ios:clk 400000Hz bm PP pm ON vdd 21 width 1 timing LEGACY(SDR12) dt B
+[ 2226.429459] sunxi-mmc sdc1: sdc set ios:clk 400000Hz bm PP pm ON vdd 21 width 1 timing LEGACY(SDR12) dt B
+[ 2226.431061] speaker force mute:0
+[ 2226.439860] sunxi-mmc sdc1: sdc set ios:clk 400000Hz bm PP pm ON vdd 21 width 1 timing SD-HS(SDR25) dt B
+[ 2226.440000] sunxi-mmc sdc1: sdc set ios:clk 50000000Hz bm PP pm ON vdd 21 width 1 timing SD-HS(SDR25) dt B
+[ 2226.440235] sunxi-mmc sdc1: sdc set ios:clk 50000000Hz bm PP pm ON vdd 21 width 4 timing SD-HS(SDR25) dt B
+[ 2226.440955] mmc2: new high speed SDIO card at address 0001
+[ 2226.468799] [XRADIO] Detect SDIO card 1
+[ 2226.482312] [SBUS] XRadio Device:sdio clk=50000000
+[ 2226.490668] [XRADIO] XRADIO_HW_REV 1.0 detected.
+[ 2226.546594] [XRADIO] xradio_update_dpllctrl: DPLL_CTRL Sync=0x01400000.
+[ 2226.564802] [XRADIO] Bootloader complete
+[ 2226.568391] speaker force mute:0
+[ 2226.572638] sunxi-bt soc@03000000:bt@0: set block: 0
+[ 2226.573201] sunxi-bt soc@03000000:bt@0: current check wlan bt_power voltage: 3300000
+[ 2226.574056] sunxi-bt soc@03000000:bt@0: current check bt io regulator voltage: 3300000
+[ 2226.657819] [XRADIO] Firmware completed.
+[ 2226.663572] [WSM] Firmware Label:XR_C09.08.52.73_DBG_02.122 2GHZ HT40 May 18 2021 13:36:09
+[ 2226.672887] [XRADIO] xradio_core_reinit:Firmware Startup Done.
+[ 2226.679998] ieee80211_do_open: vif_type=2, p2p=0, ch=3, addr=dc:44:60:a4:a4:c1
+[ 2226.688353] [STA] !!!xradio_vif_setup: id=0, type=2, p2p=0, addr=dc:44:60:a4:a4:c1
+[ 2226.697007] ieee80211 phy0: Hardware restart was requested
+[ 2226.697810] [AP_WRN] BSS_CHANGED_ASSOC but driver is unjoined.
+[ 2226.699377] IPv6: ADDRCONF(NETDEV_UP): wlan0: link is not ready
+[ 2226.716415] [XRADIO] xradio_core_reinit end!
+[ 2226.730325] [STA_WRN] !!! xradio_remove_interface: vif_id=0
+[ 2226.739433] ieee80211_do_open: vif_type=2, p2p=0, ch=3, addr=dc:44:60:a4:a4:c1
+[ 2226.747666] [STA] !!!xradio_vif_setup: id=0, type=2, p2p=0, addr=dc:44:60:a4:a4:c1
+[ 2226.756991] [AP_WRN] BSS_CHANGED_ASSOC but driver is unjoined.
+[ 2226.765736] IPv6: ADDRCONF(NETDEV_UP): wlan0: link is not ready
+[ 2226.845551] sunxi-mmc sdc2: sdc set ios:clk 0Hz bm PP pm UP vdd 23 width 1 timing LEGACY(SDR12) dt B
+[ 2226.874259] sunxi-mmc sdc2: sdc set ios:clk 400000Hz bm PP pm ON vdd 23 width 1 timing LEGACY(SDR12) dt B
+[ 2226.902292] sunxi-mmc sdc2: sdc set ios:clk 400000Hz bm OD pm ON vdd 23 width 1 timing LEGACY(SDR12) dt B
+[ 2226.913266] sunxi-mmc sdc2: sdc set ios:clk 400000Hz bm OD pm ON vdd 23 width 1 timing LEGACY(SDR12) dt B
+[ 2226.927008] sunxi-mmc sdc2: sdc set ios:clk 400000Hz bm OD pm ON vdd 23 width 1 timing LEGACY(SDR12) dt B
+[ 2226.947439] sunxi-mmc sdc2: sdc set ios:clk 400000Hz bm PP pm ON vdd 23 width 1 timing LEGACY(SDR12) dt B
+[ 2226.959697] sunxi-mmc sdc2: sdc set ios:clk 400000Hz bm PP pm ON vdd 23 width 1 timing MMC-HS(SDR20) dt B
+[ 2226.970916] sunxi-mmc sdc2: sdc set ios:clk 50000000Hz bm PP pm ON vdd 23 width 1 timing MMC-HS(SDR20) dt B
+[ 2226.982044] sunxi-mmc sdc2: sdc set ios:clk 50000000Hz bm PP pm ON vdd 23 width 8 timing MMC-HS(SDR20) dt B
+[ 2226.993431] sunxi-mmc sdc2: sdc set ios:clk 50000000Hz bm PP pm ON vdd 23 width 8 timing MMC-DDR52 dt B
+[ 2227.155682] sunxi-bt soc@03000000:bt@0: set block: 1
+[ 2227.182730] sunxi-bt soc@03000000:bt@0: set block: 0
+[ 2227.188877] sunxi-bt soc@03000000:bt@0: current check wlan bt_power voltage: 3300000
+[ 2227.198793] sunxi-bt soc@03000000:bt@0: current check bt io regulator voltage: 3300000
+[ 2227.238396] [XR_BT_LPM] bluedroid_write_proc_btwake: bluedroid_write_proc_btwake 1
+[ 2227.246934] [XR_BT_LPM] bluedroid_write_proc_btwake: wakeup bt device
+[ 2227.254338] [XR_BT_LPM] bluedroid_write_proc_lpm: disable lpm mode
+[ 2231.002611] Bluetooth: hci_uart_tty_ioctl HCIUARTSETPROTO
+[ 2231.009011] Bluetooth: hci_uart_register_dev
+[ 2236.125360] Bluetooth: hci0 advertising data length corrected
+[ 2238.793623] Bluetooth: hci0 advertising data length corrected
+[ 2242.122234] [SCAN_WRN] Timeout waiting for scan complete notification.
+[ 2242.129632] [SCAN_WRN] xradio_scan_timeout:scan timeout cnt=1
+[ 2242.136438] [SCAN_ERR] Scan failed (-110).
+[ 2242.141295] [SCAN_WRN] Scan timeout already occured. Don't cancel work
+[ 2243.453233]
+[ 2243.453233] rmmod_device_driver
+[ 2243.453233]
+[ 2243.461338] android_work: sent uevent USB_STATE=DISCONNECTED
+[ 2243.461751]
+[ 2243.461751] insmod_host_driver
+[ 2243.461751]
+[ 2243.461756] [ehci0-controller]: sunxi_usb_enable_ehci
+[ 2243.461767] [sunxi-ehci0]: probe, pdev->name: 5101000.ehci0-controller, sunxi_ehci: 0xffffff8008c1d650, 0x:ffffff8008c3d000, irq_no:163
+[ 2243.465296] read descriptors
+[ 2243.465315] read strings
+[ 2243.470885] sunxi-ehci 5101000.ehci0-controller: SW USB2.0 'Enhanced' Host Controller (EHCI) Driver
+[ 2243.470979] sunxi-ehci 5101000.ehci0-controller: new USB bus registered, assigned bus number 3
+[ 2243.519932] android_work: did not send uevent (0 0           (null))
+[ 2243.520409] sunxi-ehci 5101000.ehci0-controller: irq 355, io mem 0x00000002
+[ 2243.534227] sunxi-ehci 5101000.ehci0-controller: USB 0.0 started, EHCI 1.00
+[ 2243.541360] hub 3-0:1.0: USB hub found
+[ 2243.541460] hub 3-0:1.0: 1 port detected
+[ 2243.544789] [ohci0-controller]: sunxi_usb_enable_ohci
+[ 2243.544798] [sunxi-ohci0]: probe, pdev->name: 5101000.ohci0-controller, sunxi_ohci: 0xffffff8008c1d9e0
+[ 2243.545310] sunxi-ohci 5101000.ohci0-controller: SW USB2.0 'Open' Host Controller (OHCI) Driver
+[ 2243.545377] sunxi-ohci 5101000.ohci0-controller: new USB bus registered, assigned bus number 4
+[ 2243.545476] sunxi-ohci 5101000.ohci0-controller: irq 356, io mem 0xffffff80082b69cc
+[ 2243.610174] hub 4-0:1.0: USB hub found
+[ 2243.614671] hub 4-0:1.0: 1 port detected
+[ 2243.860056]
+[ 2243.860056] rmmod_host_driver
+[ 2243.860056]
+[ 2243.866755] [ehci0-controller]: sunxi_usb_disable_ehci
+[ 2243.872543] [sunxi-ehci0]: remove, pdev->name: 5101000.ehci0-controller, sunxi_ehci: 0xffffff8008c1d650
+[ 2243.883322] sunxi-ehci 5101000.ehci0-controller: remove, state 4
+[ 2243.890116] usb usb3: USB disconnect, device number 1
+[ 2243.898022] sunxi-ehci 5101000.ehci0-controller: USB bus 3 deregistered
+[ 2243.905891] [ohci0-controller]: sunxi_usb_disable_ohci
+[ 2243.911768] [sunxi-ohci0]: remove, pdev->name: 5101000.ohci0-controller, sunxi_ohci: 0xffffff8008c1d9e0
+[ 2243.922365] sunxi-ohci 5101000.ohci0-controller: remove, state 4
+[ 2243.929314] usb usb4: USB disconnect, device number 1
+[ 2243.937646] sunxi-ohci 5101000.ohci0-controller: USB bus 4 deregistered
+[ 2243.945941]
+[ 2243.945941] insmod_device_driver
+[ 2243.945941]
+[ 2244.172497] android_work: sent uevent USB_STATE=CONNECTED
+[ 2244.185207] configfs-gadget gadget: high-speed config #1: c
+[ 2244.192990] android_work: sent uevent USB_STATE=CONFIGURED
+[ 2244.305677]
+[ 2244.305677] rmmod_device_driver
+[ 2244.305677]
+[ 2244.313640] android_work: sent uevent USB_STATE=DISCONNECTED
+[ 2244.315011] read descriptors
+[ 2244.315025] read strings
+[ 2244.316586]
+[ 2244.316586] insmod_host_driver
+[ 2244.316586]
+[ 2244.316591] [ehci0-controller]: sunxi_usb_enable_ehci
+[ 2244.316600] [sunxi-ehci0]: probe, pdev->name: 5101000.ehci0-controller, sunxi_ehci: 0xffffff8008c1d650, 0x:ffffff8008c3d000, irq_no:163
+[ 2244.319214] sunxi-ehci 5101000.ehci0-controller: SW USB2.0 'Enhanced' Host Controller (EHCI) Driver
+[ 2244.319289] sunxi-ehci 5101000.ehci0-controller: new USB bus registered, assigned bus number 3
+[ 2244.372193] android_work: did not send uevent (0 0           (null))
+[ 2244.372734] sunxi-ehci 5101000.ehci0-controller: irq 355, io mem 0x00000002
+[ 2244.386221] sunxi-ehci 5101000.ehci0-controller: USB 0.0 started, EHCI 1.00
+[ 2244.392427] hub 3-0:1.0: USB hub found
+[ 2244.392550] hub 3-0:1.0: 1 port detected
+[ 2244.403513] [ohci0-controller]: sunxi_usb_enable_ohci
+[ 2244.403522] [sunxi-ohci0]: probe, pdev->name: 5101000.ohci0-controller, sunxi_ohci: 0xffffff8008c1d9e0
+[ 2244.404041] sunxi-ohci 5101000.ohci0-controller: SW USB2.0 'Open' Host Controller (OHCI) Driver
+[ 2244.404109] sunxi-ohci 5101000.ohci0-controller: new USB bus registered, assigned bus number 4
+[ 2244.404212] sunxi-ohci 5101000.ohci0-controller: irq 356, io mem 0xffffff8008153ac8
+[ 2244.470856] hub 4-0:1.0: USB hub found
+[ 2244.475269] hub 4-0:1.0: 1 port detected
+[ 2244.716831]
+[ 2244.716831] rmmod_host_driver
+[ 2244.716831]
+[ 2244.723919] [ehci0-controller]: sunxi_usb_disable_ehci
+[ 2244.729971] [sunxi-ehci0]: remove, pdev->name: 5101000.ehci0-controller, sunxi_ehci: 0xffffff8008c1d650
+[ 2244.740694] sunxi-ehci 5101000.ehci0-controller: remove, state 4
+[ 2244.747658] usb usb3: USB disconnect, device number 1
+[ 2244.756276] sunxi-ehci 5101000.ehci0-controller: USB bus 3 deregistered
+[ 2244.764210] [ohci0-controller]: sunxi_usb_disable_ohci
+[ 2244.770084] [sunxi-ohci0]: remove, pdev->name: 5101000.ohci0-controller, sunxi_ohci: 0xffffff8008c1d9e0
+[ 2244.770096] sunxi-ohci 5101000.ohci0-controller: remove, state 4
+[ 2244.770151] usb usb4: USB disconnect, device number 1
+[ 2244.775522] sunxi-ohci 5101000.ohci0-controller: USB bus 4 deregistered
+[ 2244.778010]
+[ 2244.778010] insmod_device_driver
+[ 2244.778010]
+[ 2244.998024] android_work: sent uevent USB_STATE=CONNECTED
+[ 2245.010317] configfs-gadget gadget: high-speed config #1: c
+[ 2245.018708] android_work: sent uevent USB_STATE=CONFIGURED
+[ 2262.319197] Bluetooth: hci0 advertising data length corrected
+[ 2288.129476] Bluetooth: hci0 advertising data length corrected
+[ 2293.331190] Bluetooth: hci0 advertising data length corrected
+[ 2294.341592] Bluetooth: hci0 advertising data length corrected
+[ 2314.233652] Bluetooth: hci0 advertising data length corrected
+[ 2314.543974] Bluetooth: hci0 advertising data length corrected
+[ 2332.538791] [STA_WRN] Freq 2412 (wsm ch: 1) prev: 3.
+[ 2332.544463] wlan0: authenticate with 44:df:65:f5:82:b0 (try 1)
+[ 2332.551768] [STA_WRN] [HT40][xradio_join_work][bss_ht_info]:
+[ 2332.551768] [primary_chan  :0x00000001]
+[ 2332.551768] [ht_param      :0x00000000]
+[ 2332.551768] [operation_mode:0x00000005]
+[ 2332.551768] [stbc_param    :0x00000000]
+[ 2332.551768] [basic_set[0]  :0x00000000]
+[ 2332.579676] [STA_WRN] [HT40][xradio_join_work][PhyModeCfg:0x0007]
+[ 2332.579676] [ModemFlags    :0x00000007]
+[ 2332.579676] [ChWidthCfg    :0x00000000]
+[ 2332.579676] [PriChCfg      :0x00000000]
+[ 2332.579676] [BandCfg       :0x00000000]
+[ 2332.579676] [STBC_Enable   :0x00000000]
+[ 2332.579676] [PreambleCfg   :0x00000000]
+[ 2332.579676] [SGI_Enable    :0x00000000]
+[ 2332.579676] GF_Enable      :0x00000000]
+[ 2332.644588] wlan0: authenticated
+[ 2332.648350] [STA_WRN] Freq 2422 (wsm ch: 3) prev: 1.
+[ 2332.654009] [AP_WRN] xradio_bss_info_changed vif(type=3) is not enable!changed=0x200
+[ 2332.662786] [STA_WRN] Freq 2412 (wsm ch: 1) prev: 3.
+[ 2332.668456] wlan0: associate with 44:df:65:f5:82:b0 (try 1)
+[ 2332.684401] wlan0: RX AssocResp from 44:df:65:f5:82:b0 (capab=0x31 status=0 aid=4)
+[ 2332.692958] wlan0: associated
+[ 2332.698408] [AP_WRN] [STA] ASSOC HTCAP 11N 58
+[ 2332.703339] [AP_WRN] [HT40][xradio_bss_info_changed][ht_prot:0x00000006][HtProtMode:0x0001][Green:0x0004]
+[ 2332.714087] [AP_WRN] [HT40][xradio_bss_info_changed][PhyModeCfg:0x5007]
+[ 2332.714087] [ModemFlags    :0x00000007]
+[ 2332.714087] [ChWidthCfg    :0x00000000]
+[ 2332.714087] [PriChCfg      :0x00000000]
+[ 2332.714087] [BandCfg       :0x00000000]
+[ 2332.714087] [STBC_Enable   :0x00000000]
+[ 2332.714087] [PreambleCfg   :0x00000001]
+[ 2332.714087] [SGI_Enable    :0x00000001]
+[ 2332.714087] [GF_Enable     :0x00000000]
+[ 2332.760885] [AP_WRN] xradio_bss_info_changed vif(type=3) is not enable!changed=0x200
+[ 2332.794155] IPv6: ADDRCONF(NETDEV_CHANGE): wlan0: link becomes ready
+[ 2339.381990] [TXRX_WRN] drop=1771, fctl=0x00d0.
+[ 2340.190600] Bluetooth: hci0 advertising data length corrected
+[ 2341.310613] Bluetooth: hci0 advertising data length corrected
+[ 2341.813372] Bluetooth: hci0 advertising data length corrected
+[ 2343.322757] Bluetooth: hci0 advertising data length corrected
+[ 2348.375440] Bluetooth: hci0 advertising data length corrected
+[ 2362.400651] speaker force mute:0
+[ 2372.923133]
+[ 2372.923133] rmmod_device_driver
+[ 2372.923133]
+[ 2372.931548] android_work: sent uevent USB_STATE=DISCONNECTED
+[ 2372.932133]
+[ 2372.932133] insmod_host_driver
+[ 2372.932133]
+[ 2372.932139] [ehci0-controller]: sunxi_usb_enable_ehci
+[ 2372.932148] [sunxi-ehci0]: probe, pdev->name: 5101000.ehci0-controller, sunxi_ehci: 0xffffff8008c1d650, 0x:ffffff8008c3d000, irq_no:163
+[ 2372.933576] read descriptors
+[ 2372.933593] read strings
+[ 2372.970503] android_work: did not send uevent (0 0           (null))
+[ 2372.979170] sunxi-ehci 5101000.ehci0-controller: SW USB2.0 'Enhanced' Host Controller (EHCI) Driver
+[ 2372.989476] sunxi-ehci 5101000.ehci0-controller: new USB bus registered, assigned bus number 3
+[ 2373.000151] sunxi-ehci 5101000.ehci0-controller: irq 355, io mem 0xffffff8008087478
+[ 2373.022233] sunxi-ehci 5101000.ehci0-controller: USB 0.0 started, EHCI 1.00
+[ 2373.034075] hub 3-0:1.0: USB hub found
+[ 2373.038506] hub 3-0:1.0: 1 port detected
+[ 2373.046276] [ohci0-controller]: sunxi_usb_enable_ohci
+[ 2373.052055] [sunxi-ohci0]: probe, pdev->name: 5101000.ohci0-controller, sunxi_ohci: 0xffffff8008c1d9e0
+[ 2373.063187] sunxi-ohci 5101000.ohci0-controller: SW USB2.0 'Open' Host Controller (OHCI) Driver
+[ 2373.073130] sunxi-ohci 5101000.ohci0-controller: new USB bus registered, assigned bus number 4
+[ 2373.082937] sunxi-ohci 5101000.ohci0-controller: irq 356, io mem 0xffffffc03a538080
+[ 2373.159380] hub 4-0:1.0: USB hub found
+[ 2373.163798] hub 4-0:1.0: 1 port detected
+[ 2374.425722]
+[ 2374.425722] rmmod_host_driver
+[ 2374.425722]
+[ 2374.432426] [ehci0-controller]: sunxi_usb_disable_ehci
+[ 2374.438212] [sunxi-ehci0]: remove, pdev->name: 5101000.ehci0-controller, sunxi_ehci: 0xffffff8008c1d650
+[ 2374.448808] sunxi-ehci 5101000.ehci0-controller: remove, state 4
+[ 2374.455655] usb usb3: USB disconnect, device number 1
+[ 2374.463569] sunxi-ehci 5101000.ehci0-controller: USB bus 3 deregistered
+[ 2374.471375] [ohci0-controller]: sunxi_usb_disable_ohci
+[ 2374.477567] [sunxi-ohci0]: remove, pdev->name: 5101000.ohci0-controller, sunxi_ohci: 0xffffff8008c1d9e0
+[ 2374.488235] sunxi-ohci 5101000.ohci0-controller: remove, state 4
+[ 2374.495096] usb usb4: USB disconnect, device number 1
+[ 2374.503676] sunxi-ohci 5101000.ohci0-controller: USB bus 4 deregistered
+[ 2374.512201]
+[ 2374.512201] insmod_host_driver
+[ 2374.512201]
+[ 2374.519103] [ehci0-controller]: sunxi_usb_enable_ehci
+[ 2374.524959] [sunxi-ehci0]: probe, pdev->name: 5101000.ehci0-controller, sunxi_ehci: 0xffffff8008c1d650, 0x:ffffff8008c3d000, irq_no:163
+[ 2374.541539] sunxi-ehci 5101000.ehci0-controller: SW USB2.0 'Enhanced' Host Controller (EHCI) Driver
+[ 2374.551927] sunxi-ehci 5101000.ehci0-controller: new USB bus registered, assigned bus number 3
+[ 2374.562635] sunxi-ehci 5101000.ehci0-controller: irq 355, io mem 0xffffff8008087478
+[ 2374.590224] sunxi-ehci 5101000.ehci0-controller: USB 0.0 started, EHCI 1.00
+[ 2374.602491] hub 3-0:1.0: USB hub found
+[ 2374.607008] hub 3-0:1.0: 1 port detected
+[ 2374.614880] [ohci0-controller]: sunxi_usb_enable_ohci
+[ 2374.620662] [sunxi-ohci0]: probe, pdev->name: 5101000.ohci0-controller, sunxi_ohci: 0xffffff8008c1d9e0
+[ 2374.631846] sunxi-ohci 5101000.ohci0-controller: SW USB2.0 'Open' Host Controller (OHCI) Driver
+[ 2374.641855] sunxi-ohci 5101000.ohci0-controller: new USB bus registered, assigned bus number 4
+[ 2374.651776] sunxi-ohci 5101000.ohci0-controller: irq 356, io mem 0xffffffc03a538080
+[ 2374.725840] hub 4-0:1.0: USB hub found
+[ 2374.730400] hub 4-0:1.0: 1 port detected
+[ 2375.101745]
+[ 2375.101745] rmmod_host_driver
+[ 2375.101745]
+[ 2375.108436] [ehci0-controller]: sunxi_usb_disable_ehci
+[ 2375.108443] [sunxi-ehci0]: remove, pdev->name: 5101000.ehci0-controller, sunxi_ehci: 0xffffff8008c1d650
+[ 2375.108494] sunxi-ehci 5101000.ehci0-controller: remove, state 4
+[ 2375.108528] usb usb3: USB disconnect, device number 1
+[ 2375.110731] sunxi-ehci 5101000.ehci0-controller: USB bus 3 deregistered
+[ 2375.111013] [ohci0-controller]: sunxi_usb_disable_ohci
+[ 2375.111019] [sunxi-ohci0]: remove, pdev->name: 5101000.ohci0-controller, sunxi_ohci: 0xffffff8008c1d9e0
+[ 2375.111026] sunxi-ohci 5101000.ohci0-controller: remove, state 4
+[ 2375.111062] usb usb4: USB disconnect, device number 1
+[ 2375.113330] sunxi-ohci 5101000.ohci0-controller: USB bus 4 deregistered
+[ 2375.114913]
+[ 2375.114913] insmod_device_driver
+[ 2375.114913]
+[ 2375.335341] android_work: sent uevent USB_STATE=CONNECTED
+[ 2375.348107] configfs-gadget gadget: high-speed config #1: c
+[ 2375.354656] android_work: sent uevent USB_STATE=CONFIGURED
+[ 2375.899034]
+[ 2375.899034] rmmod_device_driver
+[ 2375.899034]
+[ 2375.907016] android_work: sent uevent USB_STATE=DISCONNECTED
+[ 2375.908105]
+[ 2375.908105] insmod_host_driver
+[ 2375.908105]
+[ 2375.908110] [ehci0-controller]: sunxi_usb_enable_ehci
+[ 2375.908119] [sunxi-ehci0]: probe, pdev->name: 5101000.ehci0-controller, sunxi_ehci: 0xffffff8008c1d650, 0x:ffffff8008c3d000, irq_no:163
+[ 2375.909119] read descriptors
+[ 2375.909136] read strings
+[ 2375.945880] android_work: did not send uevent (0 0           (null))
+[ 2375.954520] sunxi-ehci 5101000.ehci0-controller: SW USB2.0 'Enhanced' Host Controller (EHCI) Driver
+[ 2375.964798] sunxi-ehci 5101000.ehci0-controller: new USB bus registered, assigned bus number 3
+[ 2375.975400] sunxi-ehci 5101000.ehci0-controller: irq 355, io mem 0xffffff8008087478
+[ 2375.998245] sunxi-ehci 5101000.ehci0-controller: USB 0.0 started, EHCI 1.00
+[ 2376.009899] hub 3-0:1.0: USB hub found
+[ 2376.014385] hub 3-0:1.0: 1 port detected
+[ 2376.021961] [ohci0-controller]: sunxi_usb_enable_ohci
+[ 2376.027729] [sunxi-ohci0]: probe, pdev->name: 5101000.ohci0-controller, sunxi_ohci: 0xffffff8008c1d9e0
+[ 2376.038787] sunxi-ohci 5101000.ohci0-controller: SW USB2.0 'Open' Host Controller (OHCI) Driver
+[ 2376.048713] sunxi-ohci 5101000.ohci0-controller: new USB bus registered, assigned bus number 4
+[ 2376.058531] sunxi-ohci 5101000.ohci0-controller: irq 356, io mem 0xffffffc03a538080
+[ 2376.133858] hub 4-0:1.0: USB hub found
+[ 2376.138353] hub 4-0:1.0: 1 port detected
+[ 2376.800413]
+[ 2376.800413] rmmod_host_driver
+[ 2376.800413]
+[ 2376.807101] [ehci0-controller]: sunxi_usb_disable_ehci
+[ 2376.812901] [sunxi-ehci0]: remove, pdev->name: 5101000.ehci0-controller, sunxi_ehci: 0xffffff8008c1d650
+[ 2376.823554] sunxi-ehci 5101000.ehci0-controller: remove, state 4
+[ 2376.830377] usb usb3: USB disconnect, device number 1
+[ 2376.838413] sunxi-ehci 5101000.ehci0-controller: USB bus 3 deregistered
+[ 2376.846452] [ohci0-controller]: sunxi_usb_disable_ohci
+[ 2376.852286] [sunxi-ohci0]: remove, pdev->name: 5101000.ohci0-controller, sunxi_ohci: 0xffffff8008c1d9e0
+[ 2376.852302] sunxi-ohci 5101000.ohci0-controller: remove, state 4
+[ 2376.852352] usb usb4: USB disconnect, device number 1
+[ 2376.854729] sunxi-ohci 5101000.ohci0-controller: USB bus 4 deregistered
+[ 2376.855649]
+[ 2376.855649] insmod_host_driver
+[ 2376.855649]
+[ 2376.855653] [ehci0-controller]: sunxi_usb_enable_ehci
+[ 2376.855660] [sunxi-ehci0]: probe, pdev->name: 5101000.ehci0-controller, sunxi_ehci: 0xffffff8008c1d650, 0x:ffffff8008c3d000, irq_no:163
+[ 2376.858242] sunxi-ehci 5101000.ehci0-controller: SW USB2.0 'Enhanced' Host Controller (EHCI) Driver
+[ 2376.858333] sunxi-ehci 5101000.ehci0-controller: new USB bus registered, assigned bus number 3
+[ 2376.930420] sunxi-ehci 5101000.ehci0-controller: irq 355, io mem 0x00000002
+[ 2376.954219] sunxi-ehci 5101000.ehci0-controller: USB 0.0 started, EHCI 1.00
+[ 2376.966786] hub 3-0:1.0: USB hub found
+[ 2376.971207] hub 3-0:1.0: 1 port detected
+[ 2376.980846] [ohci0-controller]: sunxi_usb_enable_ohci
+[ 2376.986577] [sunxi-ohci0]: probe, pdev->name: 5101000.ohci0-controller, sunxi_ohci: 0xffffff8008c1d9e0
+[ 2376.997757] sunxi-ohci 5101000.ohci0-controller: SW USB2.0 'Open' Host Controller (OHCI) Driver
+[ 2377.007683] sunxi-ohci 5101000.ohci0-controller: new USB bus registered, assigned bus number 4
+[ 2377.017481] sunxi-ohci 5101000.ohci0-controller: irq 356, io mem 0x10014000a
+[ 2377.090726] hub 4-0:1.0: USB hub found
+[ 2377.095109] hub 4-0:1.0: 1 port detected
+[ 2379.862841]
+[ 2379.862841] rmmod_host_driver
+[ 2379.862841]
+[ 2379.869563] [ehci0-controller]: sunxi_usb_disable_ehci
+[ 2379.875365] [sunxi-ehci0]: remove, pdev->name: 5101000.ehci0-controller, sunxi_ehci: 0xffffff8008c1d650
+[ 2379.875416] sunxi-ehci 5101000.ehci0-controller: remove, state 4
+[ 2379.875455] usb usb3: USB disconnect, device number 1
+[ 2379.878071] sunxi-ehci 5101000.ehci0-controller: USB bus 3 deregistered
+[ 2379.878690] [ohci0-controller]: sunxi_usb_disable_ohci
+[ 2379.878699] [sunxi-ohci0]: remove, pdev->name: 5101000.ohci0-controller, sunxi_ohci: 0xffffff8008c1d9e0
+[ 2379.878709] sunxi-ohci 5101000.ohci0-controller: remove, state 4
+[ 2379.878755] usb usb4: USB disconnect, device number 1
+[ 2379.880856] sunxi-ohci 5101000.ohci0-controller: USB bus 4 deregistered
+[ 2379.893245]
+[ 2379.893245] insmod_device_driver
+[ 2379.893245]
+[ 2380.114096] android_work: sent uevent USB_STATE=CONNECTED
+[ 2380.126239] configfs-gadget gadget: high-speed config #1: c
+[ 2380.132893] android_work: sent uevent USB_STATE=CONFIGURED
+[ 3821.366804] [BH_WRN] miss interrupt!
+[ 4319.017771] [BH_WRN] miss interrupt!
+[ 4639.985134] sunxi-ehci 5200000.ehci1-controller: ehci_irq: highspeed device connect
+[ 4640.223145] usb 1-1: new high-speed USB device number 2 using sunxi-ehci
+[ 6202.436502] android_work: sent uevent USB_STATE=DISCONNECTED
+[ 6202.437654] read descriptors
+[ 6202.437669] read strings
+[ 6202.449924] android_work: did not send uevent (0 0           (null))
+[ 6234.418714] speaker force mute:0
+[ 6240.367533] sunxi-ehci 5200000.ehci1-controller: ehci_irq: highspeed device disconnect
+[ 6240.376860] usb 1-1: USB disconnect, device number 2
+[ 6886.437857] android_work: sent uevent USB_STATE=CONNECTED
+[ 6886.450241] configfs-gadget gadget: high-speed config #1: c
+[ 6886.456844] android_work: sent uevent USB_STATE=CONFIGURED
+[ 6891.352044] axp2202_usb_power: current limit setted: usb pc type
+[ 6891.352044]
+[ 6922.242729] sunxi-ehci 5200000.ehci1-controller: ehci_irq: highspeed device connect
+[ 6922.479467] usb 1-1: new high-speed USB device number 3 using sunxi-ehci
+
+# adb_exit=0
