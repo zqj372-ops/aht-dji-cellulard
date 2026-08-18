@@ -1,0 +1,110 @@
+<style>
+  :root { --ink:#eef4f5; --muted:#94a3aa; --line:rgba(255,255,255,.12); --panel:rgba(255,255,255,.065); --orange:#ff9a3d; --green:#66d69a; --blue:#8db5ff; }
+  .intro { max-width:900px; margin-bottom:24px; }
+  .intro h2 { margin-bottom:7px; }
+  .intro .subtitle { margin:0; }
+  .layout { display:grid; grid-template-columns:minmax(0,1.2fr) minmax(320px,.8fr); gap:24px; align-items:start; }
+  .device { aspect-ratio:4/3; padding:19px; border-radius:18px; background:#0a0f16; border:7px solid #222b34; box-shadow:inset 0 0 0 1px rgba(255,255,255,.07),0 20px 55px rgba(0,0,0,.4); color:var(--ink); font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif; }
+  .device * { box-sizing:border-box; }
+  .status { display:flex; justify-content:space-between; align-items:center; color:#b5c1c7; font-size:10px; margin-bottom:16px; }
+  .status-left,.status-right { display:flex; gap:10px; align-items:center; }
+  .dot { width:6px; height:6px; border-radius:50%; background:var(--orange); box-shadow:0 0 10px currentColor; }
+  .screen-spec { color:#71808a; font-size:8px; letter-spacing:.02em; }
+  .title-row { display:flex; align-items:end; justify-content:space-between; margin-bottom:15px; }
+  .screen-title { font-size:26px; font-weight:750; letter-spacing:-.065em; }
+  .screen-sub { color:var(--muted); font-size:10px; margin-top:5px; }
+  .count { color:var(--orange); font-size:29px; font-weight:750; letter-spacing:-.06em; line-height:.8; }
+  .count-label { color:var(--muted); font-size:9px; text-align:right; margin-top:5px; }
+  .need-card { display:flex; gap:12px; align-items:center; padding:11px 14px; margin:8px 0; border-radius:12px; background:var(--panel); border:1px solid var(--line); }
+  .need-card:first-of-type { border-color:rgba(255,154,61,.44); background:linear-gradient(90deg,rgba(255,154,61,.13),rgba(255,255,255,.05)); }
+  .brand-icon { flex:0 0 37px; width:37px; height:37px; display:grid; place-items:center; border-radius:11px; overflow:hidden; }
+  .brand-icon img { width:24px; height:24px; object-fit:contain; display:block; }
+  .brand-icon.codex { background:#171b22; }
+  .brand-icon.codex img { width:25px; height:25px; }
+  .brand-icon.deepseek { background:#fff; }
+  .brand-icon.deepseek img { width:27px; height:27px; }
+  .brand-icon.claude { background:#2a1d18; }
+  .brand-icon.claude img { width:27px; height:27px; }
+  .brand-icon.openclaw { background:#241215; }
+  .brand-icon.openclaw img { width:29px; height:29px; }
+  .brand-icon.hermes { background:#28200c; }
+  .brand-icon.hermes img, .brand-icon.opencode img { filter:invert(1); }
+  .brand-icon.gemini { background:#151a2b; }
+  .brand-icon.gemini img { width:26px; height:26px; }
+  .agent-name { font-size:13px; font-weight:700; }
+  .agent-desc { color:var(--muted); font-size:10px; margin-top:4px; }
+  .time { margin-left:auto; align-self:flex-start; color:var(--muted); font-size:9px; white-space:nowrap; }
+  .arrow { color:#6d7b83; font-size:15px; }
+  .bottom { display:flex; justify-content:space-between; margin-top:14px; padding-top:11px; border-top:1px solid var(--line); color:#9aa9b0; font-size:9px; }
+  .bottom strong { color:var(--ink); }
+  .notes { padding:18px; border:1px solid rgba(255,255,255,.1); border-radius:15px; background:rgba(255,255,255,.035); }
+  .notes h3 { margin:0 0 7px; font-size:15px; }
+  .notes-intro { margin:0 0 14px; color:var(--muted); font-size:10px; line-height:1.5; }
+  .icon-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .source { min-width:0; display:flex; gap:8px; align-items:center; padding:9px; border:1px solid var(--line); border-radius:10px; background:rgba(255,255,255,.035); }
+  .source .brand-icon { flex-basis:30px; width:30px; height:30px; border-radius:8px; }
+  .source .brand-icon img { width:20px; height:20px; }
+  .source .brand-icon.claude img, .source .brand-icon.openclaw img { width:23px; height:23px; }
+  .source .brand-icon.gemini img { width:22px; height:22px; }
+  .source .copy { min-width:0; }
+  .copy strong { display:block; font-size:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .copy span { display:block; margin-top:3px; color:var(--muted); font-size:8px; line-height:1.35; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .manifest { margin-top:15px; padding-top:13px; border-top:1px solid var(--line); }
+  .manifest-title { color:#b7c4ca; font-size:10px; margin-bottom:8px; }
+  .manifest code { display:block; padding:8px 9px; border-radius:8px; background:#080c12; color:#9dc0ff; font-size:9px; line-height:1.65; white-space:normal; }
+  .notice { margin-top:13px; padding:10px 11px; border-radius:10px; background:rgba(255,154,61,.08); border:1px solid rgba(255,154,61,.22); color:#f6c793; font-size:9px; line-height:1.55; }
+  .hw { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:13px; }
+  .hw div { padding:7px 8px; border-radius:8px; background:rgba(255,255,255,.04); color:#9caab1; font-size:8px; }
+  .hw b { display:block; color:#e7edef; font-size:9px; margin-top:2px; }
+  /* 统一 Agent 图标规范：白底、同一容器、同一绘制尺寸。 */
+  .brand-icon.codex,
+  .brand-icon.deepseek,
+  .brand-icon.claude,
+  .brand-icon.gemini,
+  .brand-icon.hermes,
+  .brand-icon.openclaw,
+  .brand-icon.opencode { background:#fff; }
+  .brand-icon img,
+  .source .brand-icon img { width:24px !important; height:24px !important; }
+  .brand-icon.hermes img,
+  .brand-icon.opencode img,
+  .source .brand-icon.hermes img,
+  .source .brand-icon.opencode img { filter:brightness(0); }
+  @media (max-width:900px) { .layout { grid-template-columns:1fr; } }
+  @media (max-width:520px) { .icon-grid { grid-template-columns:1fr; } }
+</style>
+
+<div class="intro">
+  <h2>A · 统一 Agent 图标：LobeHub Icons</h2>
+  <p class="subtitle">LobeHub 目录覆盖本版首批 Agent；Codex 使用蓝白品牌色变体，新增 DeepSeek Harness（dsh）支持。图标已按固定版本下载到本地，屏幕运行时不依赖网络。当前预览仍以中文、4:3 手持设备为第一交付面。</p>
+</div>
+
+<div class="layout">
+  <div class="device">
+    <div class="status"><div class="status-left"><span class="dot"></span>4G　46ms　VPN ●</div><div class="status-right"><span class="screen-spec">1024 × 768 · 60 Hz</span>电量 82%</div></div>
+    <div class="title-row"><div><div class="screen-title">现在需要你</div><div class="screen-sub">Agent 有 4 个事项等待处理</div></div><div><div class="count">4</div><div class="count-label">待处理</div></div></div>
+    <div class="need-card"><div class="brand-icon codex"><img src="assets/codex-color.svg" alt="LobeHub Codex 蓝白图标" /></div><div><div class="agent-name">Codex</div><div class="agent-desc">确认部署到生产环境 · 高风险</div></div><div class="time">现在</div><div class="arrow">›</div></div>
+    <div class="need-card"><div class="brand-icon deepseek"><img src="assets/deepseek-color.svg" alt="LobeHub DeepSeek 图标" /></div><div><div class="agent-name">DeepSeek Harness</div><div class="agent-desc">dsh 开发者预览 · 插件状态待确认</div></div><div class="time">新</div><div class="arrow">›</div></div>
+    <div class="need-card"><div class="brand-icon claude"><img src="assets/claudecode-color.svg" alt="LobeHub Claude Code 图标" /></div><div><div class="agent-name">Claude Code</div><div class="agent-desc">代码审查完成 · 等待你的合并决策</div></div><div class="time">2 分钟</div><div class="arrow">›</div></div>
+    <div class="need-card"><div class="brand-icon openclaw"><img src="assets/openclaw-color.svg" alt="LobeHub OpenClaw 图标" /></div><div><div class="agent-name">OpenClaw</div><div class="agent-desc">研究任务已完成 · 可查看摘要</div></div><div class="time">5 分钟</div><div class="arrow">›</div></div>
+    <div class="bottom"><span>Agent <strong>7</strong></span><span>服务器 <strong>4</strong></span><span>A 查看　B 返回　FN 语音</span></div>
+  </div>
+
+  <div class="notes">
+    <h3>已覆盖 Agent</h3>
+    <p class="notes-intro">统一来源：LobeHub Icons · 本地资源 · 固定版本 1.94.0</p>
+    <div class="icon-grid">
+      <div class="source"><div class="brand-icon codex"><img src="assets/codex-color.svg" alt="Codex 蓝白图标" /></div><div class="copy"><strong>Codex</strong><span>codex-color.svg · 蓝白变体</span></div></div>
+      <div class="source"><div class="brand-icon deepseek"><img src="assets/deepseek-color.svg" alt="DeepSeek Harness 白底图标" /></div><div class="copy"><strong>DeepSeek Harness</strong><span>deepseek-color.svg · 白底 · dsh</span></div></div>
+      <div class="source"><div class="brand-icon claude"><img src="assets/claudecode-color.svg" alt="Claude Code" /></div><div class="copy"><strong>Claude Code</strong><span>claudecode-color.svg</span></div></div>
+      <div class="source"><div class="brand-icon gemini"><img src="assets/geminicli-color.svg" alt="Gemini CLI" /></div><div class="copy"><strong>Gemini CLI</strong><span>geminicli-color.svg</span></div></div>
+      <div class="source"><div class="brand-icon hermes"><img src="assets/hermesagent.svg" alt="Hermes Agent" /></div><div class="copy"><strong>Hermes Agent</strong><span>hermesagent.svg</span></div></div>
+      <div class="source"><div class="brand-icon openclaw"><img src="assets/openclaw-color.svg" alt="OpenClaw" /></div><div class="copy"><strong>OpenClaw</strong><span>openclaw-color.svg</span></div></div>
+      <div class="source"><div class="brand-icon opencode"><img src="assets/opencode.svg" alt="opencode" /></div><div class="copy"><strong>opencode</strong><span>opencode.svg</span></div></div>
+    </div>
+
+    <div class="manifest"><div class="manifest-title">设备端资源清单</div><code>@lobehub/icons-static-svg@1.94.0<br />codex-color · deepseek-color · claudecode<br />geminicli · hermesagent · openclaw · opencode</code></div>
+    <div class="hw"><div>实际显示<b>1024 × 768</b></div><div>刷新 / 旋转<b>60 Hz · 0°</b></div><div>面板标识<b>gh7003</b></div><div>虚拟帧缓冲<b>仅多缓冲，不作布局</b></div></div>
+    <div class="notice">正式客户端会锁定 SVG 版本或提交哈希，并将资源随程序发布；联网更新与屏幕显示分离。帧缓冲步长 4096 bytes 只进入渲染适配层，不在 UI 尺寸计算中写死。</div>
+  </div>
+</div>

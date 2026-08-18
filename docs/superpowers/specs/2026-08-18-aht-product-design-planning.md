@@ -1,7 +1,9 @@
 # AHT 产品设计规划
 
-状态：已按推荐方案确认，作为下一阶段产品与工程执行基线
+状态：已按推荐方案确认，作为下一阶段产品与工程执行基线；P0 基线与公开协议 reference 闭环已完成，P1 可信连接基础正在执行
 日期：2026-08-18
+
+设计稿归档：[docs/design/README.md](../../design/README.md)
 
 ## 1. 产品结论
 
@@ -24,7 +26,10 @@ AHT（AI Handheld Terminal）第一阶段不是通用聊天设备，也不是远
 | FixtureProvider | 已实现 | 无网络、可重复的开发数据源 |
 | V0.2 GatewayProvider | 已实现 | 本地 WebSocket reference harness 支持 snapshot、event、ack、断线、resume 和 source 切换 |
 | Gateway approval UI 闭环 | 已实现并验证 | 本地 reference Gateway 下，A/X 命令可读回事件确认 |
+| `aht.gateway.v1` 公开协议业务闭环 | 已实现并验证 | 严格 parser、授权/session/scope、snapshot/event revision、command precondition、ack/final event、幂等、resync、audit 和 reference WebSocket 回归 |
+| Reference Gateway 可恢复状态 | 已实现（reference 级） | 可选 JSON store 恢复 snapshot、event history、command ledger 和 audit；损坏 store fail closed，不等于生产持久化 |
 | Brick Pro 原生 ARM64 层 | 已实现并有真机记录 | framebuffer、evdev、中文渲染、MainUI app 包和按键流程已有验证记录 |
+| LobeHub Grok MainUI 桌面图标 | 已实现并有真机记录 | 官方 Grok path 离线生成 PNG，设备 Apps `2/2` 页面实机回读 |
 | Browser / Native 主体状态模型 | 已部分对齐 | 通过各自的 TypeScript/C++ 模型维护，尚未由单一 schema 生成 |
 
 ### 2.2 尚未交付的产品能力
@@ -33,7 +38,7 @@ AHT（AI Handheld Terminal）第一阶段不是通用聊天设备，也不是远
 | --- | --- | --- |
 | 生产 Gateway | 未交付 | 当前 reference harness 不能代表生产权威 |
 | 认证、设备配对、租户和权限 | 未交付 | 不能安全地开放真实审批 |
-| 持久化 snapshot、event store、审计 | 未交付 | 无法证明事件历史和最终责任归属 |
+| 生产持久化 snapshot、event store、审计 | 未交付 | 当前只有 reference 级本地 JSON store，尚无生产数据库、跨进程一致性和留存策略 |
 | Codex 生产 Adapter | 未交付 | 目前只有本地协议参考闭环 |
 | 真实 Agent 会话控制 | 未交付 | Agents 页先保持只读 |
 | 真实 SSH/Mosh/Terminal | 未交付 | 当前 Terminal 只能是本地只读回显 |
@@ -41,12 +46,12 @@ AHT（AI Handheld Terminal）第一阶段不是通用聊天设备，也不是远
 
 ### 2.3 当前工作区状态
 
-当前分支为 `feat/aht-v0.1-browser-simulator`。工作区包含原生实现、真机截图、验证文档以及 README/spec/plan 的未提交修改。该状态说明原生 bring-up 已有实质进展，但不应被描述成一个已经整理、提交、发布的产品版本。
+当前分支为 `feat/aht-v0.1-browser-simulator`，HEAD 为公开协议业务闭环提交 `9a76f18`。工作区包含原生实现、Grok 桌面图标、真机截图、验证文档以及 README/spec/plan 的未提交修改；共享任务仍在同一工作区协作。该状态说明原生 bring-up 和协议 reference 已有实质进展，但不应被描述成一个已经整理、提交、发布的生产产品版本。
 
 当前重跑的本地检查结果：
 
-- `npm test -- --run`：13 个测试文件、21 个测试通过。
-- `npm run build`：TypeScript 和 Vite 构建通过，46 个模块完成构建。
+- `npm test -- --run`：完整回归结果以当前工作区实际输出为准；本阶段新增 reference store 与重启恢复测试。
+- `npm run build`：TypeScript 和 Vite 构建通过，模块数量以当前构建输出为准。
 - `make -C native test host-smoke arm64 uinput-pad app-package`：原生 model、renderer、UI、host smoke、ARM64、uinput 和 app package 检查通过。
 - 以上结果证明本地代码和打包链可运行，不证明生产 Gateway、真实 Agent Adapter 或未来发布流程已经完成。
 
@@ -272,7 +277,7 @@ permission_scope
 
 ## 8. 路线图与退出标准
 
-### P0：产品收束与工程基线
+### P0：产品收束与工程基线（已完成基线冻结，工作区整理未提交）
 
 目标：把当前 demo、协议参考和真机 bring-up 正确归类。
 
@@ -286,7 +291,7 @@ permission_scope
 
 退出标准：任何页面都不会把本地模拟、协议参考或真机 bring-up 描述成生产能力。
 
-### P1：可信连接基础
+### P1：可信连接基础（执行中，当前完成 reference 可恢复状态）
 
 目标：设备可以安全地看见真实状态。
 
@@ -297,6 +302,8 @@ permission_scope
 - 持久化 snapshot / event store。
 - 事件游标、断线恢复和数据新鲜度。
 - 只读 Agents、Servers、Needs You。
+
+当前证据：reference harness 已可选持久化 snapshot、event history、command ledger 和 audit 回读；生产 Auth、租户隔离、生产 store 与真实 Gateway 仍未完成。
 
 退出标准：用户能连接真实 Gateway，并准确判断来源、更新时间和权限范围。
 
@@ -388,10 +395,11 @@ permission_scope
 
 ## 11. 当前执行顺序
 
-1. 保留并单独整理当前原生 bring-up 及验证证据，不将其与生产 Gateway 混合描述。
-2. 冻结生产 Gateway 的身份、权限、快照新鲜度和事件确认契约。
-3. 先实现只读真实连接，再实现 Codex 单 Agent 审批。
-4. 在 Browser 端完成真实闭环回归后，再将同一协议接入 Native。
-5. 通过真实使用证据决定是否进入更多 Agent、语音或 Terminal。
+1. 保留并单独整理当前原生 bring-up、Grok 图标及验证证据，不将其与生产 Gateway 混合描述。
+2. 冻结并继续回归生产 Gateway 的身份、权限、快照新鲜度和事件确认契约；公开协议 reference 闭环已经完成。
+3. 先把 reference JSON store 的重启、审计回读和 fail-closed 证据固定，再替换为可审查的生产 store/auth 接口；不能把 reference 凭据或本地文件当成生产方案。
+4. 先实现只读真实连接，再实现 Codex 单 Agent 审批；外部服务身份、真实事件来源和部署证据必须独立确认。
+5. 在 Browser 端完成真实闭环回归后，再将同一协议接入 Native。
+6. 通过真实使用证据决定是否进入更多 Agent、语音或 Terminal。
 
 本规划不授权刷写固件、修改 eMMC、部署生产服务或接触未定义的客户数据和凭证。它只定义产品方向、系统边界和后续交付顺序。

@@ -56,7 +56,7 @@ native/main
 - 支持 32-bit RGB/ARGB 和常见 16-bit RGB565；未知格式在启动日志中失败并退出。
 - 在 host 使用内存 surface，输出 PPM 截图，不需要 X11、Wayland 或 SDL2。
 
-`NativeRenderer` 使用当前 CSS 的颜色、间距、卡片、状态色和 1024×768 逻辑尺寸，以软件矩形/线条/文字绘制页面。文字绘制提供内置 Latin bitmap fallback，并支持构建时生成的 CJK glyph atlas；缺少 atlas 时仍能启动，但非 Latin 字符显示为可见的方框，不静默丢失文本。
+`NativeRenderer` 使用当前 CSS 的颜色、间距、卡片、状态色和 1024×768 逻辑尺寸，以软件矩形/线条/文字绘制页面。`drawText()` 按 UTF-8 解码：Latin 字符使用内置 5×7 表，CJK 字符使用 `native/tools/make_cjk_font.py` 生成的 16×16 单色内嵌字库 `native/include/aht/cjk_glyphs.hpp`（180 个字形，约 28KB），设备无需外部字体文件；未收录字形显示方框占位，不静默丢失文本。应用页内的 LOGO、信号/VPN/电池状态图标和 7 个 Agent 图标均由矢量/几何绘制函数渲染；MainUI 桌面图标单独复用 `src/assets/agents/grok.svg`，构建时离线生成 PNG。
 
 ### 输入层
 
@@ -70,7 +70,7 @@ native/main
 
 - Home：显示 pending 数量和 pending Inbox 卡片；确认打开第一项。
 - Needs You：显示全部 Inbox 项；方向键选择、确认打开。
-- Approval：显示 Agent、标题、风险、详情和 fixture 结果；`A`/`X`/`B` 分别批准/拒绝/返回，`Enter` 默认确认当前动作，`Esc` 返回。
+- Approval：显示 Agent、标题、风险、详情和 fixture 结果；`A`/`X`/`B` 分别批准/拒绝/返回，`D`/`V` 可稍后处理，审批页不使用 Enter 隐式批准，`Esc` 返回。
 - Agents：显示七个 Agent 的名称、项目、摘要、状态和 Developer Preview 标记。
 - Servers：显示 TOKYO-01 的 Ping、CPU、RAM、Disk、Load、Docker 和服务状态，并标记 fixture。
 - Terminal：显示只读本地回显说明；第一版不执行 shell，不接受真实远程命令。
@@ -81,7 +81,7 @@ native/main
 - framebuffer 打不开、mmap 失败、像素格式不支持时，打印明确错误并以非零退出，不回退到伪造设备成功。
 - evdev 不可读时程序仍允许 host/headless 或无输入启动，并在界面 footer 显示 `Input unavailable`。
 - fixture 决策只更新内存状态，不写服务器、不写 SD、不发网络请求。
-- 缺失字体 atlas、缺失图标资源只影响对应绘制，不影响进程启动；状态栏显示资源缺失提示。
+- 未收录字形只影响该字符绘制，显示方框占位，不影响进程启动；LOGO/Agent 图标是内建几何绘制，无外部资源缺失路径。
 
 ## 验收
 
@@ -96,9 +96,10 @@ native/main
 
 - 连接底部 PC data Type-C 口并使用真实数据线后，复制 pak 到已确认的 Brick Pro/NextUI SD 环境。
 - 程序启动后读取真实 framebuffer 参数，在屏幕显示 AHT Home。
+- 屏幕直接显示中文标题（首页/需要你/审批等）、AHT LOGO 和 Agent 图标，不出现整页方框。
 - 用实际按键完成页面切换、打开审批、批准和返回。
 - 记录设备型号、内核、framebuffer ioctl、input event 节点和退出日志；不以本机交叉编译成功替代设备实测。
 
 ## 后续演进
 
-设备 bring-up 通过后，再单独设计 `aht.gateway.v1` 的原生 WebSocket adapter、TLS/认证、真实数据 stale/readback、字体和 SVG/PNG 图标资源，以及是否需要自定义 CFW。第一版不会把这些未验证能力混入启动包。
+设备 bring-up 通过后，再单独设计 `aht.gateway.v1` 的原生 WebSocket adapter、TLS/认证和真实数据 stale/readback。桌面 SVG/PNG 图标资源已采用官方 LobeHub Grok 源并纳入构建，不在设备运行时引入 React、Node 或网络依赖。
